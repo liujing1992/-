@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>温湿度互查工具 - 详细位置信息</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .message-box {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .message-box.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl p-8 transform transition-all hover:scale-[1.01]">
+        <h1 class="text-3xl font-bold text-center text-blue-800 mb-6">温湿度互查工具</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-700">输入参数</h2>
+                
+                <div class="relative">
+                    <label for="dryBulbTemp" class="block text-sm font-medium text-gray-600 mb-1">干球温度 (°C)</label>
+                    <input type="number" id="dryBulbTemp" step="0.1" placeholder="例如: 25.0"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                
+                <div class="relative">
+                    <label for="relativeHumidity" class="block text-sm font-medium text-gray-600 mb-1">相对湿度 (%)</label>
+                    <input type="number" id="relativeHumidity" step="0.1" placeholder="例如: 50.0"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+
+                <div class="relative">
+                    <label for="wetBulbTemp" class="block text-sm font-medium text-gray-600 mb-1">湿球温度 (°C)</label>
+                    <input type="number" id="wetBulbTemp" step="0.1" placeholder="例如: 20.0"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+
+                <div class="flex items-center mt-2">
+                    <input type="checkbox" id="useGeolocation" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="useGeolocation" class="ml-2 block text-sm text-gray-900">尝试自动获取位置信息</label>
+                </div>
+                
+                <div class="relative">
+                    <label for="altitude" class="block text-sm font-medium text-gray-600 mb-1">海拔 (米)</label>
+                    <input type="number" id="altitude" step="1" placeholder="手动输入或自动获取"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+
+                <div class="relative">
+                    <label for="pressure" class="block text-sm font-medium text-gray-600 mb-1">大气压 (Pa)</label>
+                    <input type="number" id="pressure" step="1" placeholder="默认: 101325"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-700">计算结果</h2>
+                <div id="results" class="bg-gray-50 p-4 rounded-lg shadow-inner border border-gray-200 min-h-[200px] flex items-center justify-center">
+                    <p class="text-gray-500 text-sm">请至少输入两个参数进行计算...</p>
+                </div>
+                 <div id="locationInfo" class="mt-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
+                    <h3 class="text-md font-semibold text-gray-700 mb-2">详细位置信息</h3>
+                    <p class="text-gray-500 text-sm">等待获取位置信息...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button id="calculateBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                <div class="flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7l6 6-6 6"></path></svg>
+                    计算
+                </div>
+            </button>
+            <button id="clearBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                <div class="flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    清空
+                </div>
+            </button>
+        </div>
+
+        <div id="messageBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 p-4 rounded-lg shadow-lg text-white text-center max-w-sm w-full message-box"></div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const dryBulbTempInput = document.getElementById('dryBulbTemp');
+        const relativeHumidityInput = document.getElementById('relativeHumidity');
+        const wetBulbTempInput = document.getElementById('wetBulbTemp');
+        const useGeolocationCheckbox = document.getElementById('useGeolocation');
+        const altitudeInput = document.getElementById('altitude');
+        const pressureInput = document.getElementById('pressure');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultsDiv = document.getElementById('results');
+        const locationInfoDiv = document.getElementById('locationInfo'); // New element
+
+        // Initial atmospheric pressure and altitude
+        let ATMOSPHERIC_PRESSURE = 101325; // Pa
+        let currentAltitude = 0; // Default altitude
+
+        // Constants (same as before)
+        const R_DA = 287.058; // Gas constant for dry air (J/(kg·K))
+        const R_WV = 461.52; // Gas constant for water vapor (J/(kg·K))
+        const CP_DA = 1006; // Specific heat of dry air (J/(kg·K))
+        const LV = 2.501e6; // Latent heat of vaporization of water (J/kg)
+
+        // Magnus-Tetens formula to calculate saturation vapor pressure
+        function getSaturationVaporPressure(tempCelsius) {
+            return 611.2 * Math.exp((17.67 * tempCelsius) / (tempCelsius + 243.5));
+        }
+        
+        // Gorner's formula for wet-bulb temperature approximation
+        function calculateWetBulbTemp(dbt, rh, pressure) {
+            const RH = rh / 100;
+            const es = getSaturationVaporPressure(dbt);
+            const e = RH * es; // Actual vapor pressure
+
+            // Use an iterative approach to find WBT
+            let T_wb = dbt; // Initial guess
+            let iterations = 0;
+            const maxIterations = 100;
+            const tolerance = 0.05; // Tolerance for WBT match
+
+            while (iterations < maxIterations) {
+                const es_wb_guess = getSaturationVaporPressure(T_wb);
+                // Estimate vapor pressure based on WBT approximation
+                // pv_est = es_wb - (P * (T_db - T_wb) * (1 + 0.00115 * T_wb) * 0.000662)
+                const pv_est = es_wb_guess - (pressure * (dbt - T_wb) * (1 + 0.00115 * T_wb) * 0.000662);
+                
+                // Calculate RH based on the estimated pv and DBT
+                const es_dbt = getSaturationVaporPressure(dbt);
+                const rh_est = (pv_est / es_dbt) * 100;
+
+                // We are looking for T_wb where the calculated RH from DBT and WBT matches the input RH
+                // The equation to solve is: RH = (es_wb - (P * (dbt - wbt) * ...)) / es_dbt * 100
+                // It's complex to solve directly for wbt. Let's use a simpler check:
+                // Calculate WBT from DBT and actual vapor pressure 'e'
+                // This is the inverse problem, often solved iteratively.
+                // For illustration, let's refine the iterative step:
+
+                // If the estimated vapor pressure from WBT is close to the actual vapor pressure 'e', we're close
+                if (Math.abs(pv_est - e) < 1) { // Tolerance based on vapor pressure
+                    break; // Found a good WBT
+                }
+
+                // Adjust T_wb guess
+                if (pv_est > e) { // Estimated PV is too high, means WBT guess is too high
+                    T_wb -= 0.1;
+                } else { // Estimated PV is too low, means WBT guess is too low
+                    T_wb += 0.1;
+                }
+                iterations++;
+            }
+            return T_wb;
+        }
+
+        // Function to calculate atmospheric pressure from altitude
+        function getPressureFromAltitude(altitude) {
+            const P0 = 101325; // Standard atmospheric pressure at sea level (Pa)
+            // Simplified standard atmosphere model (exponential decay)
+            return P0 * Math.pow(1 - 2.25577e-5 * altitude, 5.2559);
+        }
+
+        // Function to display detailed location info in Chinese
+        function displayLocationInfo(coords) {
+            locationInfoDiv.innerHTML = `
+                <h3 class="text-md font-semibold text-gray-700 mb-2">详细位置信息</h3>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div><strong>纬度:</strong> ${coords.latitude.toFixed(6)}</div>
+                    <div><strong>经度:</strong> ${coords.longitude.toFixed(6)}</div>
+                    <div><strong>精度:</strong> ${coords.accuracy.toFixed(2)} 米</div>
+                    <div><strong>时间戳:</strong> ${new Date(coords.timestamp).toLocaleString()}</div>
+                    <div><strong>海拔:</strong> ${coords.altitude !== null ? coords.altitude.toFixed(2) + ' 米' : 'N/A'}</div>
+                    <div><strong>海拔精度:</strong> ${coords.altitudeAccuracy !== null ? coords.altitudeAccuracy.toFixed(2) + ' 米' : 'N/A'}</div>
+                    <div><strong>方向:</strong> ${coords.heading !== null ? coords.heading + '°' : 'N/A'}</div>
+                    <div><strong>速度:</strong> ${coords.speed !== null ? coords.speed.toFixed(2) + ' 米/秒' : 'N/A'}</div>
+                </div>
+            `;
+             // Automatically fill altitude and pressure if available and checkbox is checked
+            if (useGeolocationCheckbox.checked) {
+                if (coords.altitude !== null) {
+                    altitudeInput.value = coords.altitude.toFixed(2);
+                    currentAltitude = coords.altitude;
+                    ATMOSPHERIC_PRESSURE = getPressureFromAltitude(currentAltitude);
+                    pressureInput.value = Math.round(ATMOSPHERIC_PRESSURE);
+                    pressureInput.readOnly = true; // Make read-only if auto-filled
+                    altitudeInput.readOnly = true; // Make read-only if auto-filled
+                } else {
+                    // Altitude not available, revert to manual input
+                    altitudeInput.value = '';
+                    pressureInput.value = 101325; // Reset to default
+                    pressureInput.readOnly = false;
+                    altitudeInput.readOnly = false;
+                    showMessage("当前位置海拔信息不可用，请手动输入。", 'warning');
+                }
+            } else {
+                 // If checkbox is unchecked, ensure inputs are editable
+                pressureInput.readOnly = false;
+                altitudeInput.readOnly = false;
+            }
+        }
+
+        // Function to show custom messages
+        function showMessage(message, type = 'info') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.classList.add('visible');
+
+            // Set colors based on message type
+            messageBox.classList.remove('bg-red-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500');
+            switch (type) {
+                case 'error': messageBox.classList.add('bg-red-500'); break;
+                case 'success': messageBox.classList.add('bg-green-500'); break;
+                case 'warning': messageBox.classList.add('bg-yellow-500'); break;
+                default: messageBox.classList.add('bg-blue-500');
+            }
+
+            setTimeout(() => {
+                messageBox.classList.remove('visible');
+            }, 3000); // Hide after 3 seconds
+        }
+
+        // Validate inputs for calculation
+        function validateInputs(dbt, rh, wbt) {
+            let count = 0;
+            if (dbt !== null && !isNaN(dbt)) count++;
+            if (rh !== null && !isNaN(rh)) count++;
+            if (wbt !== null && !isNaN(wbt)) count++;
+            if (count < 2) {
+                showMessage("请输入至少两个参数进行计算。", 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // Calculate all properties
+        function calculateProperties(dbt, rh, wbt, pressure) {
+            let T_db = dbt;
+            let RH = rh;
+            let T_wb = wbt;
+            let T_dp = null; // Dew point temperature
+            let pv = null; // Vapor pressure
+            let calculated_dbt = null, calculated_rh = null, calculated_wbt = null;
+
+            const currentPressure = pressure && !isNaN(pressure) ? pressure : 101325;
+
+            if (T_db !== null && RH !== null) {
+                const es = getSaturationVaporPressure(T_db);
+                pv = (RH / 100) * es;
+                T_dp = (243.5 * Math.log(pv / 611.2)) / (17.67 - Math.log(pv / 611.2));
+                calculated_wbt = calculateWetBulbTemp(T_db, RH, currentPressure);
+                calculated_dbt = T_db;
+                calculated_rh = RH;
+            } else if (T_db !== null && T_wb !== null) {
+                const es_wb = getSaturationVaporPressure(T_wb);
+                pv = es_wb - (currentPressure * (T_db - T_wb) * (1 + 0.00115 * T_wb) * 0.000662);
+                
+                if (pv > 0) {
+                    const es_dbt = getSaturationVaporPressure(T_db);
+                    calculated_rh = (pv / es_dbt) * 100;
+                    T_dp = (243.5 * Math.log(pv / 611.2)) / (17.67 - Math.log(pv / 611.2));
+                    calculated_dbt = T_db;
+                    calculated_wbt = T_wb;
+                } else {
+                    showMessage("基于输入的湿球温度计算出的水蒸气压为非正值，请检查输入。", 'error');
+                    return;
+                }
+            } else if (RH !== null && T_wb !== null) {
+                let guess_dbt = T_wb; 
+                let iterations = 0;
+                const maxIterations = 100;
+                const tolerance = 0.1; 
+
+                while (iterations < maxIterations) {
+                    const calculated_wbt_for_guess = calculateWetBulbTemp(guess_dbt, RH, currentPressure);
+                    const diff = calculated_wbt_for_guess - T_wb;
+
+                    if (Math.abs(diff) < tolerance) {
+                        calculated_dbt = guess_dbt;
+                        const es_dbt = getSaturationVaporPressure(calculated_dbt);
+                        pv = (RH / 100) * es_dbt;
+                        T_dp = (243.5 * Math.log(pv / 611.2)) / (17.67 - Math.log(pv / 611.2));
+                        calculated_rh = RH;
+                        calculated_wbt = T_wb;
+                        break;
+                    }
+
+                    if (diff > 0) { 
+                        guess_dbt -= 0.5; 
+                    } else { 
+                        guess_dbt += 0.5; 
+                    }
+                    iterations++;
+                }
+
+                if (calculated_dbt === null) {
+                     showMessage("无法基于输入的组合计算出干球温度。", 'error');
+                     return;
+                }
+            } else {
+                showMessage("请输入至少两个参数进行计算。", 'error');
+                return;
+            }
+            
+            if (calculated_dbt === null || calculated_rh === null || calculated_wbt === null) {
+                showMessage("计算过程中出现未知错误。", 'error');
+                return;
+            }
+
+            if (pv === null || pv <= 0) {
+                console.error("Calculated vapor pressure is invalid:", pv);
+                resultsDiv.innerHTML = '<p class="text-gray-500 text-sm">无法计算水汽相关参数，请检查输入。</p>';
+                return;
+            }
+
+            const W = 0.622 * pv / (currentPressure - pv); // Humidity ratio (kg/kg)
+            const T_absolute = calculated_dbt + 273.15;
+            const V_ma = (R_DA * T_absolute * (1 + (R_WV/R_DA) * W)) / currentPressure;
+            const W_volumetric = (W * 1000) / V_ma; // g/m³
+
+            const dbtOut = calculated_dbt.toFixed(2);
+            const rhOut = calculated_rh.toFixed(2);
+            const wbtOut = calculated_wbt.toFixed(2);
+            const w_mass = (W * 1000).toFixed(2); // g/kg dry air
+            const w_vol = W_volumetric.toFixed(2); // g/m³
+            const tdpOut = T_dp !== null ? T_dp.toFixed(2) : 'N/A';
+            
+            displayResults(dbtOut, rhOut, wbtOut, w_mass, w_vol, tdpOut);
+        }
+
+        // Display calculation results
+        function displayResults(dbt, rh, wbt, w_mass, w_vol, tdp) {
+            resultsDiv.innerHTML = `
+                <div class="space-y-2">
+                    <p class="text-sm font-semibold text-gray-700">干球温度: <span class="text-blue-600">${dbt} °C</span></p>
+                    <p class="text-sm font-semibold text-gray-700">湿球温度: <span class="text-blue-600">${wbt} °C</span></p>
+                    <p class="text-sm font-semibold text-gray-700">相对湿度: <span class="text-blue-600">${rh} %</span></p>
+                    <p class="text-sm font-semibold text-gray-700">露点温度: <span class="text-blue-600">${tdp} °C</span></p>
+                    <p class="text-sm font-semibold text-gray-700">每公斤干空气含水量: <span class="text-blue-600">${w_mass} g/kg</span></p>
+                    <p class="text-sm font-semibold text-gray-700">每立方空气含水量: <span class="text-blue-600">${w_vol} g/m³</span></p>
+                </div>
+            `;
+            showMessage("计算完成！", 'success');
+        }
+
+        // Clear all inputs and results
+        function clearInputs() {
+            dryBulbTempInput.value = '';
+            relativeHumidityInput.value = '';
+            wetBulbTempInput.value = '';
+            altitudeInput.value = '';
+            pressureInput.value = 101325; // Reset to default
+            resultsDiv.innerHTML = '<p class="text-gray-500 text-sm">请至少输入两个参数进行计算...</p>';
+            locationInfoDiv.innerHTML = '<h3 class="text-md font-semibold text-gray-700 mb-2">详细位置信息</h3><p class="text-gray-500 text-sm">等待获取位置信息...</p>';
+            useGeolocationCheckbox.checked = false; // Uncheck the box
+            
+            altitudeInput.readOnly = false;
+            pressureInput.readOnly = false;
+
+            showMessage("已清空。", 'info');
+        }
+
+        // Event listener for Geolocation Checkbox
+        useGeolocationCheckbox.addEventListener('change', () => {
+            if (useGeolocationCheckbox.checked) {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            displayLocationInfo(position.coords); 
+                        },
+                        (error) => {
+                            let errorMessage = "获取位置失败：";
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMessage += "您拒绝了地理定位请求。";
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMessage += "位置信息无法获取。";
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMessage += "请求地理定位超时。";
+                                    break;
+                                case error.UNKNOWN_ERROR:
+                                    errorMessage += "发生未知错误。";
+                                    break;
+                            }
+                            showMessage(errorMessage, 'error');
+                            useGeolocationCheckbox.checked = false; 
+                            altitudeInput.value = '';
+                            pressureInput.value = 101325;
+                            altitudeInput.readOnly = false;
+                            pressureInput.readOnly = false;
+                            locationInfoDiv.innerHTML = '<h3 class="text-md font-semibold text-gray-700 mb-2">详细位置信息</h3><p class="text-gray-500 text-sm">获取位置失败。</p>';
+                        },
+                        {
+                            enableHighAccuracy: true, 
+                            timeout: 10000,          
+                            maximumAge: 0            
+                        }
+                    );
+                } else {
+                    showMessage("您的浏览器不支持地理位置 API。", 'error');
+                    useGeolocationCheckbox.checked = false; 
+                     altitudeInput.readOnly = false;
+                    pressureInput.readOnly = false;
+                }
+            } else {
+                altitudeInput.value = '';
+                pressureInput.value = 101325;
+                altitudeInput.readOnly = false;
+                pressureInput.readOnly = false;
+                locationInfoDiv.innerHTML = '<h3 class="text-md font-semibold text-gray-700 mb-2">详细位置信息</h3><p class="text-gray-500 text-sm">手动输入或等待重新获取。</p>';
+            }
+        });
+
+        // Event listener for altitude input
+        altitudeInput.addEventListener('input', () => {
+             if (altitudeInput.value && !isNaN(altitudeInput.value)) {
+                currentAltitude = parseFloat(altitudeInput.value);
+                ATMOSPHERIC_PRESSURE = getPressureFromAltitude(currentAltitude);
+                pressureInput.value = Math.round(ATMOSPHERIC_PRESSURE);
+                pressureInput.readOnly = true; 
+                useGeolocationCheckbox.checked = false; 
+            } else {
+                currentAltitude = 0;
+                ATMOSPHERIC_PRESSURE = 101325;
+                pressureInput.value = ATMOSPHERIC_PRESSURE;
+                pressureInput.readOnly = false; 
+                useGeolocationCheckbox.checked = false; 
+            }
+        });
+
+        // Event listener for pressure input
+        pressureInput.addEventListener('input', () => {
+            if (pressureInput.value && !isNaN(pressureInput.value)) {
+                ATMOSPHERIC_PRESSURE = parseFloat(pressureInput.value);
+                altitudeInput.value = ''; 
+                altitudeInput.readOnly = false; 
+                useGeolocationCheckbox.checked = false; 
+            } else {
+                ATMOSPHERIC_PRESSURE = 101325; 
+                pressureInput.value = ATMOSPHERIC_PRESSURE;
+                useGeolocationCheckbox.checked = false; 
+            }
+        });
+
+        // Event listener for Calculate button
+        calculateBtn.addEventListener('click', () => {
+            const dbt = dryBulbTempInput.value === '' ? null : parseFloat(dryBulbTempInput.value);
+            const rh = relativeHumidityInput.value === '' ? null : parseFloat(relativeHumidityInput.value);
+            const wbt = wetBulbTempInput.value === '' ? null : parseFloat(wetBulbTempInput.value);
+            
+            const currentPressure = pressureInput.readOnly ? ATMOSPHERIC_PRESSURE : parseFloat(pressureInput.value) || 101325;
+
+            if (validateInputs(dbt, rh, wbt)) {
+                calculateProperties(dbt, rh, wbt, currentPressure);
+            }
+        });
+
+        // Event listener for Clear button
+        clearBtn.addEventListener('click', clearInputs);
+
+        // Initialize the display for location info
+        function initializeLocationInfo() {
+            locationInfoDiv.innerHTML = '<h3 class="text-md font-semibold text-gray-700 mb-2">详细位置信息</h3><p class="text-gray-500 text-sm">等待获取位置信息...</p>';
+        }
+
+        // Initial setup
+        initializeLocationInfo();
+
+    </script>
+
+</body>
+</html>
