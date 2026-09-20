@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVBox线路解析下载工具</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+<style>
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-panel: rgba(16, 22, 48, 0.95);
+    --bg-hover: rgba(30, 40, 80, 0.5);
+    --border: rgba(100, 130, 255, 0.12);
+    --border-active: rgba(0, 212, 255, 0.5);
+    --text: #d0d8f0;
+    --text-dim: #6b7a9c;
+    --accent: #00d4ff;
+    --accent-2: #8b5cf6;
+    --accent-glow: rgba(0, 212, 255, 0.15);
+    --success: #2ed573;
+    --warn: #ffa502;
+    --danger: #ff4757;
+    --radius: 12px;
+    --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 24px 16px 40px; flex: 1; width: 100%; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 24px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--border-active); background: rgba(0, 212, 255, 0.06);
+    font-size: 11.5px; color: var(--accent); font-weight: 600;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+  h1 { font-size: 26px; font-weight: 700; margin: 10px 0 6px; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--text-dim); font-size: 13px; max-width: 600px; margin: 0 auto; }
+
+  /* Input methods tabs */
+  .input-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .input-tab {
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg-panel); color: var(--text-dim); font-size: 13px;
+    transition: all .15s; user-select: none; font-weight: 500;
+  }
+  .input-tab:hover { border-color: var(--border-active); color: var(--text); }
+  .input-tab.active {
+    color: #081020; font-weight: 700; border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), #40e0ff);
+  }
+
+  /* Layout */
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .panel-title { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  /* Input */
+  textarea, input[type="text"], input[type="url"] {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; outline: none;
+    transition: border-color .2s, box-shadow .2s; font-family: var(--font-mono);
+  }
+  textarea:focus, input:focus { border-color: var(--border-active); box-shadow: 0 0 0 3px var(--accent-glow); }
+  textarea::placeholder, input::placeholder { color: #4a5270; }
+  textarea { min-height: 180px; resize: vertical; line-height: 1.7; }
+
+  .btn {
+    padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  }
+  .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), #40e0ff); color: #081020; box-shadow: 0 3px 14px rgba(0,212,255,0.2); }
+  .btn.secondary { background: transparent; border-color: var(--border); color: var(--text); font-weight: 500; }
+  .btn.secondary:hover { border-color: var(--border-active); }
+  .btn.success { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.25); color: var(--success); }
+  .btn.danger { background: rgba(255,71,87,0.1); border-color: rgba(255,71,87,0.2); color: var(--danger); }
+  .btn.info { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.2); color: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+
+  /* File list table */
+  .file-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .file-table th { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); color: var(--text-dim); font-weight: 500; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+  .file-table td { padding: 8px; border-bottom: 1px solid rgba(100,130,255,0.06); vertical-align: middle; }
+  .file-table tr:hover { background: var(--bg-hover); }
+  .file-table td:first-child { width: 30px; text-align: center; }
+  .file-table td:last-child { width: 120px; }
+  .file-name { font-weight: 500; color: var(--text); word-break: break-all; }
+  .file-path { color: var(--text-dim); font-size: 11px; word-break: break-all; max-width: 300px; }
+  .file-type { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .type-jar { background: rgba(255,165,2,0.12); color: var(--warn); }
+  .type-py { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .type-js { background: rgba(139,92,246,0.12); color: var(--accent-2); }
+  .type-json { background: rgba(46,213,115,0.1); color: var(--success); }
+  .type-txt { background: rgba(200,200,200,0.12); color: #c0c0c0; }
+  .type-img { background: rgba(255,105,180,0.12); color: #ff69b4; }
+  .type-video { background: rgba(220,20,60,0.12); color: #dc143c; }
+  .type-audio { background: rgba(30,144,255,0.12); color: #1e90ff; }
+  .type-zip { background: rgba(218,165,32,0.12); color: #daa520; }
+  .type-other { background: rgba(107,122,156,0.1); color: var(--text-dim); }
+
+  /* Progress */
+  .progress-wrap {
+    margin: 12px 0; padding: 12px; border-radius: 10px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    display: none;
+  }
+  .progress-wrap.show { display: block; }
+  .progress-info {
+    display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 6px; border-radius: 3px; background: rgba(0,0,0,0.5); overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .3s ease;
+  }
+  .progress-log {
+    margin-top: 8px; font-size: 11px; color: var(--text-dim);
+    max-height: 120px; overflow-y: auto; font-family: var(--font-mono);
+    line-height: 1.6;
+  }
+  .progress-log .ok { color: var(--success); }
+  .progress-log .err { color: var(--danger); }
+  .progress-log .warn { color: var(--warn); }
+  .file-size { color: var(--text-dim); font-size: 11px; }
+  .file-url { font-size: 11px; color: var(--text-dim); word-break: break-all; max-width: 200px; }
+
+  /* Checkbox */
+  .chk { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+  /* Status */
+  .status { display: none; margin-top: 10px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; }
+  .status.show { display: block; }
+  .status.ok { background: rgba(46,213,115,0.07); border: 1px solid rgba(46,213,115,0.2); color: var(--success); }
+  .status.err { background: rgba(255,71,87,0.05); border: 1px solid rgba(255,71,87,0.2); color: var(--danger); }
+  .status.warn { background: rgba(255,165,2,0.05); border: 1px solid rgba(255,165,2,0.2); color: var(--warn); }
+  .status.info { background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15); color: var(--accent); }
+
+  /* Code block */
+  .code-block {
+    background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7;
+    overflow-x: auto; white-space: pre; max-height: 300px; overflow-y: auto;
+    color: var(--text-dim);
+  }
+  .code-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .code-title { font-size: 12px; font-weight: 600; color: var(--text); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 16px; padding: 10px 14px; border-radius: 8px;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--border); margin-bottom: 12px;
+  }
+  .stat-item { display: flex; align-items: center; gap: 6px; }
+  .stat-num { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-dim); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+  footer { text-align: center; color: var(--text-dim); font-size: 12px; margin-top: 20px; }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 16px 10px 28px; }
+    h1 { font-size: 20px; }
+    .file-table .file-path, .file-table .file-url { max-width: 120px; }
+  }
+
+  .editor-pane { display: none; }
+  .editor-pane.active { display: block; }
+  .editor-section { margin-bottom: 16px; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); }
+  .editor-section-title { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  .editor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .editor-grid { grid-template-columns: 1fr; } }
+  .editor-field { margin-bottom: 8px; }
+  .editor-field label { display: block; font-size: 11.5px; color: var(--text-dim); margin-bottom: 3px; }
+  .editor-field input, .editor-field select { width: 100%; padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text); font-size: 12.5px; outline: none; font-family: var(--font-mono); }
+  .editor-field input:focus, .editor-field select:focus { border-color: var(--border-active); }
+  .editor-field input::placeholder { color: #4a5270; }
+  .editor-list { max-height: 300px; overflow-y: auto; }
+  .editor-item { padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.25); border: 1px solid var(--border); margin-bottom: 8px; }
+  .editor-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .editor-item-title { font-size: 12.5px; font-weight: 600; color: var(--text); }
+  .editor-item-actions { display: flex; gap: 4px; }
+  .editor-item-actions button { padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-dim); }
+  .editor-item-actions button:hover { border-color: var(--danger); color: var(--danger); }
+  .editor-preview { background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.6; max-height: 250px; overflow: auto; color: var(--text-dim); white-space: pre; }
+  .editor-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+  .editor-tab { padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text-dim); transition: all .15s; }
+  .editor-tab:hover { border-color: var(--border-active); color: var(--text); }
+  .editor-tab.active { background: var(--accent); color: #081020; border-color: var(--accent); font-weight: 600; }
+
+  /* Parsed JSON viewer */
+  .parsed-json-wrap { margin-top: 14px; animation: fadeIn .3s ease; }
+  .parsed-json-box {
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; max-height: 520px; overflow-y: auto; transition: max-height .25s ease;
+  }
+  .parsed-json-box.collapsed { max-height: 0; border-color: transparent; }
+  .parsed-json-box pre { margin: 0; padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; line-height: 1.65; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+  .parsed-json-box .json-key   { color: #7dd3fc; }
+  .parsed-json-box .json-string{ color: #a7f3d0; }
+  .parsed-json-box .json-number{ color: #fca5a5; }
+  .parsed-json-box .json-bool  { color: #fde68a; }
+  .parsed-json-box .json-null  { color: #9ca3af; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="badge"><span class="dot"></span>TVBOX DEPENDENCY DOWNLOADER</div>
+    <h1>TVBox <span>线路解析下载工具</span></h1>
+    <p class="sub">解析 TVBox 接口配置，一键提取 jar/py/js/json 等依赖文件，生成批量下载脚本</p>
+  </header>
+
+  <div class="input-tabs" role="tablist">
+    <div class="input-tab active" data-input="url">🔗 接口 URL</div>
+    <div class="input-tab" data-input="json">📋 粘贴 JSON</div>
+    <div class="input-tab" data-input="file">📁 上传文件</div>
+    <div class="input-tab" data-input="editor">📝 配置编辑</div>
+  </div>
+
+  <div class="main">
+    <!-- Left: Input -->
+    <div class="panel">
+      <!-- URL Input -->
+      <div class="input-pane active" id="pane-url">
+        <div class="panel-title">🔗 输入接口 URL</div>
+        <input type="url" id="urlInput" placeholder="https://example.com/tvbox.json">
+        <div style="margin-top: 10px; font-size: 12px; color: var(--text-dim);">
+          ⚠️ 由于浏览器跨域限制，URL 方式可能无法直接获取。如遇失败，请改用「粘贴 JSON」方式。
+        </div>
+      </div>
+
+      <!-- JSON Input -->
+      <div class="input-pane" id="pane-json" style="display:none;">
+        <div class="panel-title">📋 粘贴接口 JSON 内容</div>
+        <textarea id="jsonInput" placeholder="粘贴 TVBox 接口的完整 JSON 内容...
+
+示例结构：
+{
+  &quot;spider&quot;: &quot;https://example.com/spider.jar&quot;,
+  &quot;sites&quot;: [
+    { &quot;key&quot;: &quot;xxx&quot;, &quot;name&quot;: &quot;站点&quot;, &quot;type&quot;: 3, &quot;api&quot;: &quot;csp_XXX&quot;, &quot;ext&quot;: &quot;https://example.com/ext.py&quot; }
+  ]
+}"></textarea>
+      </div>
+
+      <!-- File Input -->
+      <div class="input-pane" id="pane-file" style="display:none;">
+        <div class="panel-title">📁 上传接口 JSON 文件</div>
+        <input type="file" id="fileInput" accept=".json,.txt" style="display:none">
+        <div class="dropzone" id="fileDropzone" style="border:1.5px dashed var(--border); border-radius:10px; padding:30px 12px; text-align:center; cursor:pointer; transition:all .18s; background:rgba(0,0,0,0.15);">
+          <div style="font-size:24px; margin-bottom:6px;">📁</div>
+          <div style="font-size:13px;">点击选择或拖拽 JSON 文件</div>
+          <div style="font-size:11.5px; color:var(--text-dim); margin-top:4px;">支持 .json / .txt 格式</div>
+        </div>
+        <div id="fileName" style="margin-top:8px; font-size:12px; color:var(--accent); display:none;"></div>
+      </div>
+
+      <!-- Config Editor Pane -->
+      <div class="input-pane editor-pane" id="pane-editor" style="display:none;">
+        <div class="panel-title">📝 配置可视化编辑器</div>
+        <div class="editor-tabs">
+          <div class="editor-tab active" data-editor="basic">⚙️ 基本配置</div>
+          <div class="editor-tab" data-editor="sites">📺 站点</div>
+          <div class="editor-tab" data-editor="parses">🔗 解析</div>
+          <div class="editor-tab" data-editor="lives">📡 直播</div>
+          <div class="editor-tab" data-editor="rules">📋 规则</div>
+          <div class="editor-tab" data-editor="preview">📄 预览</div>
+        </div>
+        <div class="editor-section" id="editor-basic">
+          <div class="editor-section-title">⚙️ 基本配置</div>
+          <div class="editor-grid">
+            <div class="editor-field"><label>Spider (JAR路径)</label><input type="text" id="edSpider" placeholder="./spider.jar"></div>
+            <div class="editor-field"><label>Wallpaper</label><input type="text" id="edWallpaper" placeholder="https://xxx/wallpaper.jpg"></div>
+            <div class="editor-field"><label>Logo</label><input type="text" id="edLogo" placeholder="https://xxx/logo.png"></div>
+            <div class="editor-field"><label>Warning Text</label><input type="text" id="edWarning" placeholder="资源来自网络..."></div>
+          </div>
+        </div>
+        <div class="editor-section" id="editor-sites" style="display:none;">
+          <div class="editor-section-title">📺 站点列表 (<span id="edSiteCount">0</span>)</div>
+          <div class="btn-row" style="margin-bottom:10px;">
+            <button class="btn success" id="btnAddSite" style="padding:6px 12px; font-size:12px;">➕ 添加站点</button>
+            <button class="btn secondary" id="btnClearSites" style="padding:6px 12px; font-size:12px;">🗑️ 清空</button>
+          </div>
+          <div class="editor-list" id="edSiteList"></div>
+        </div>
+        <div class="editor-section" id="editor-parses" style="display:none;">
+          <div class="editor-section-title">🔗 解析器 (<span id="edParseCount">0</span>)</div>
+          <div class="btn-row" style="margin-bottom:10px;">
+            <button class="btn success" id="btnAddParse" style="padding:6px 12px; font-size:12px;">➕ 添加解析</button>
+            <button class="btn secondary" id="btnClearParses" style="padding:6px 12px; font-size:12px;">🗑️ 清空</button>
+          </div>
+          <div class="editor-list" id="edParseList"></div>
+        </div>
+        <div class="editor-section" id="editor-lives" style="display:none;">
+          <div class="editor-section-title">📡 直播线路 (<span id="edLiveCount">0</span>)</div>
+          <div class="btn-row" style="margin-bottom:10px;">
+            <button class="btn success" id="btnAddLive" style="padding:6px 12px; font-size:12px;">➕ 添加线路</button>
+            <button class="btn secondary" id="btnClearLives" style="padding:6px 12px; font-size:12px;">🗑️ 清空</button>
+          </div>
+          <div class="editor-list" id="edLiveList"></div>
+        </div>
+        <div class="editor-section" id="editor-rules" style="display:none;">
+          <div class="editor-section-title">📋 规则配置</div>
+          <div class="editor-field"><label>Hosts (JSON)</label><textarea id="edHosts" style="min-height:80px; font-size:12px;" placeholder='[{"name":"xxx","hosts":["xxx.com"]}]'></textarea></div>
+          <div class="editor-field"><label>Ads (逗号分隔)</label><input type="text" id="edAds" placeholder="https://ad1.js,https://ad2.js"></div>
+          <div class="editor-field"><label>Sniffer</label><textarea id="edSniffer" style="min-height:60px; font-size:12px;" placeholder='{"regex":"..."}'></textarea></div>
+        </div>
+        <div class="editor-section" id="editor-preview" style="display:none;">
+          <div class="editor-section-title">📄 JSON 预览</div>
+          <div class="editor-preview" id="edJsonPreview">{}</div>
+        </div>
+        <div class="btn-row" style="margin-top:12px; flex-wrap:wrap; gap:6px;">
+          <button class="btn primary" id="btnEdGenerate">🔧 生成 JSON</button>
+          <button class="btn secondary" id="btnEdImport">📥 粘贴导入</button>
+          <button class="btn secondary" id="btnEdImportUrl">🔗 URL 导入</button>
+          <button class="btn secondary" id="btnEdImportFile">📂 文件导入</button>
+          <input type="file" id="edFileInput" accept=".json,.txt,application/json,text/plain" style="display:none;">
+          <button class="btn secondary" id="btnEdLoadSample">加载示例</button>
+          <button class="btn success" id="btnEdCopy">📋 复制</button>
+          <button class="btn info" id="btnEdDownload">💾 下载 JSON</button>
+          <button class="btn info" id="btnEdParseDown">📦 解析并下载</button>
+          <button class="btn danger" id="btnEdClear">🗑️ 清空</button>
+        </div>
+        <div class="status" id="statusEditor"></div>
+      </div>
+
+      <div class="btn-row" style="margin-top:12px; display:flex; gap:8px;">
+        <button class="btn primary" id="btnParse">🔍 解析依赖</button>
+        <button class="btn secondary" id="btnClearInput">清空</button>
+        <button class="btn info" id="btnSample">加载示例</button>
+      </div>
+      <div class="status" id="statusInput"></div>
+
+      <!-- Parsed JSON Viewer -->
+      <div class="parsed-json-wrap" id="parsedJsonWrap" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:13px; font-weight:600; color:var(--text);">📄 解析的接口配置</span>
+          <div style="display:flex; gap:6px;">
+            <button class="btn secondary" id="btnJsonCopy" style="padding:4px 10px; font-size:12px;">📋 复制</button>
+            <button class="btn primary" id="btnJsonDownloadTop" style="padding:4px 10px; font-size:12px;">💾 下载 JSON</button>
+          </div>
+        </div>
+        <div class="parsed-json-box" id="parsedJsonBox">
+          <pre id="parsedJsonPre"><code id="parsedJsonCode">{}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="panel">
+      <div class="panel-title">📦 解析结果</div>
+
+      <div class="stats-bar" id="statsBar" style="display:none; flex-wrap: wrap;">
+        <div class="stat-item"><span class="stat-num" id="statTotal">0</span><span class="stat-label">总文件</span></div>
+        <div class="stat-item"><span class="stat-num" id="statJar">0</span><span class="stat-label">JAR</span></div>
+        <div class="stat-item"><span class="stat-num" id="statPy">0</span><span class="stat-label">PY</span></div>
+        <div class="stat-item"><span class="stat-num" id="statJs">0</span><span class="stat-label">JS</span></div>
+        <div class="stat-item"><span class="stat-num" id="statJson">0</span><span class="stat-label">JSON</span></div>
+        <div class="stat-item"><span class="stat-num" id="statTxt">0</span><span class="stat-label">TXT</span></div>
+        <div class="stat-item"><span class="stat-num" id="statHtml">0</span><span class="stat-label">HTML</span></div>
+        <div class="stat-item"><span class="stat-num" id="statImg">0</span><span class="stat-label">图片</span></div>
+      </div>
+
+      <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
+        <label style="font-size: 12px; color: var(--text-dim); cursor: pointer;">
+          <input type="checkbox" id="chkSelectAll" style="accent-color: var(--accent); margin-right: 4px;"> 全选
+        </label>
+        <span id="selectedCount" style="font-size: 12px; color: var(--text-dim); margin-left: auto;">已选择 0 个</span>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <button class="btn info" id="btnPackDownload" style="flex: 1; justify-content: center;">📦 一键打包下载</button>
+        <button class="btn info" id="btnDownloadJar" style="flex: 1; justify-content: center;">jar下载</button>
+      </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-info">
+          <span id="progressText">准备下载...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-log" id="progressLog"></div>
+      </div>
+
+      <div style="max-height: 300px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border);">
+        <table class="file-table" id="fileTable">
+          <thead><tr><th></th><th>文件名</th><th>类型</th><th>字段路径</th><th>URL</th></tr></thead>
+          <tbody id="fileList">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:40px;">请先解析接口配置</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="status" id="statusScript" style="margin-top: 12px;"></div>
+    </div>
+  </div>
+
+  <footer>TVBox线路解析下载工具 · 纯浏览器本地解析 · 数据不上传服务器（关注公众号：蜂蜜哆哆）</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function(id) { return document.getElementById(id); };
+  var parsedFiles = [];
+  var selectedFiles = new Set();
+
+  // ========== Tab switching ==========
+  document.querySelectorAll('.input-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.input-tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.input-pane').forEach(function (p) { p.style.display = 'none'; });
+      tab.classList.add('active');
+      var paneId = 'pane-' + tab.getAttribute('data-input');
+      var paneEl = $(paneId);
+      if (paneEl) paneEl.style.display = 'block';
+    });
+  });
+
+  // ========== Status helpers ==========
+  function showStatus(id, type, msg) {
+    var el = $(id);
+    el.className = "status show " + type;
+    el.textContent = msg;
+  }
+  function clearStatus(id) {
+    $(id).className = "status";
+    $(id).textContent = "";
+  }
+
+  // ========== File parsing ==========
+  // ========== Image-to-string decoder (ported from TVBox imgToStr tool) ==========
+  // 读取图片字节，找最后一个 "**" 分隔符，对其后内容做 Base64 解码
+  function tryDecodeImage(bytes) {
+    try {
+      var bin = '';
+      var chunk = 0x8000;
+      for (var i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      var lastIndex = bin.lastIndexOf('**');
+      if (lastIndex !== -1) {
+        bin = bin.slice(lastIndex + 2);
+      }
+      var clean = bin.replace(/\s+/g, '');
+      var decoded = atob(clean);
+      var out = '';
+      for (var j = 0; j < decoded.length; j++) {
+        out += String.fromCharCode(decoded.charCodeAt(j));
+      }
+      return out;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ========== AES-128-CBC decryption (ported from TVBox crypto tool) ==========
+  function padTo16Byte(str) {
+    return CryptoJS.enc.Utf8.parse(str.toString().padEnd(16, "0"));
+  }
+
+  function convertToHex(str) {
+    return CryptoJS.enc.Hex.stringify(CryptoJS.enc.Utf8.parse(str));
+  }
+
+  function convertToString(hex) {
+    return CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Hex.parse(hex));
+  }
+
+  function tryDecryptAes(input) {
+    if (!input || typeof input !== 'string') return null;
+    try {
+      var markerStartHex = CryptoJS.enc.Utf8.parse("$#").toString(); // "2423"
+      var markerEndHex = CryptoJS.enc.Utf8.parse("#$").toString();   // "2324"
+      var endPos = input.indexOf(markerEndHex);
+      if (endPos === -1) return null;
+      var chars = input.split("");
+      var keySegment = chars.splice(0, endPos + markerEndHex.length).join("");
+      var ivHex = chars.splice(chars.length - 26, 26).join("");
+      var ciphertext = chars.join("");
+      var keyHex = keySegment.substring(markerStartHex.length, keySegment.length - markerEndHex.length);
+      var key = convertToString(keyHex);
+      var iv = convertToString(ivHex);
+      var keyWA = CryptoJS.enc.Utf8.parse(key.padEnd(16, "0"));
+      var ivWA = CryptoJS.enc.Utf8.parse(iv.padEnd(16, "0"));
+      var cipherParams = CryptoJS.lib.CipherParams.create({
+        ciphertext: CryptoJS.enc.Hex.parse(ciphertext)
+      });
+      var decrypted = CryptoJS.AES.decrypt(cipherParams, keyWA, {
+        iv: ivWA, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
+      });
+      return CryptoJS.enc.Utf8.stringify(decrypted);
+    } catch (e) { return null; }
+  }
+
+  // ========== Config decryption helpers ==========
+  function tryDecodeBase64(str) {
+    try { return atob(str.trim()); } catch (e) { return null; }
+  }
+  function tryDecodeBase64Url(str) {
+    try {
+      var fixed = str.trim().replace(/-/g, '+').replace(/_/g, '/');
+      while (fixed.length % 4 !== 0) fixed += '=';
+      return atob(fixed);
+    } catch (e) { return null; }
+  }
+  function tryDecodeUtf8(str) {
+    try { return decodeURIComponent(escape(str)); } catch (e) { return null; }
+  }
+  function decryptConfig(str) {
+    if (!str || typeof str !== 'string') return null;
+    var s = str.trim();
+    // AES-128-CBC ($#key#$ format)
+    var r = tryDecryptAes(s);
+    if (r) { try { JSON.parse(r); return r; } catch(e){} }
+    // Standard base64
+    r = tryDecodeBase64(s);
+    if (r) { try { JSON.parse(r); return r; } catch(e){} }
+    // Base64url
+    r = tryDecodeBase64Url(s);
+    if (r) { try { JSON.parse(r); return r; } catch(e){} }
+    // Base64 → UTF-8
+    r = tryDecodeBase64(s);
+    if (r) { r = tryDecodeUtf8(r); if (r) { try { JSON.parse(r); return r; } catch(e){} } }
+    // Base64url → UTF-8
+    r = tryDecodeBase64Url(s);
+    if (r) { r = tryDecodeUtf8(r); if (r) { try { JSON.parse(r); return r; } catch(e){} } }
+    // Hex decode
+    if (/^[0-9a-fA-F]+$/.test(s) && s.length > 20) {
+      try {
+        var hex = '';
+        for (var i = 0; i < s.length; i += 2) {
+          hex += String.fromCharCode(parseInt(s.substr(i, 2), 16));
+        }
+        try { JSON.parse(hex); return hex; } catch(e){}
+      } catch(e) {}
+    }
+    return null;
+  }
+
+  // [Enhancement from Python] Clean JSON comments (// and /* */)
+  function cleanJsonComments(str) {
+    if (!str || typeof str !== 'string') return str;
+    // Remove single-line comments //...
+    var cleaned = str.replace(/\/\/[^\n\r]*/g, '');
+    // Remove multi-line comments /* ... */
+    cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
+    return cleaned;
+  }
+
+  // [Enhancement from Python] Extract JSON from text (find { ... } or [ ... ] patterns)
+  function extractJsonFromText(str) {
+    if (!str || typeof str !== 'string') return null;
+    // Try to find JSON object/array by bracket matching
+    var patterns = [
+      /\{[\s\S]*\}/,
+      /\[[\s\S]*\]/
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      var matches = str.match(patterns[i]);
+      if (matches) {
+        for (var j = 0; j < matches.length; j++) {
+          try {
+            var candidate = matches[j];
+            JSON.parse(candidate);
+            return candidate;
+          } catch (e) {}
+        }
+      }
+    }
+    return null;
+  }
+
+  // [Enhancement from Python] Deep base64 decode recursively
+  function deepBase64Decode(obj) {
+    if (typeof obj === 'string') {
+      var s = obj.trim();
+      if (s.length > 20) {
+        var decoded = tryDecodeBase64(s);
+        if (decoded) {
+          try {
+            var parsed = JSON.parse(decoded);
+            return deepBase64Decode(parsed);
+          } catch (e) {
+            return decoded;
+          }
+        }
+      }
+      return obj;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(function(item) { return deepBase64Decode(item); });
+    }
+    if (obj && typeof obj === 'object') {
+      var result = {};
+      Object.keys(obj).forEach(function(key) {
+        result[key] = deepBase64Decode(obj[key]);
+      });
+      return result;
+    }
+    return obj;
+  }
+
+  function isValidUrl(str) {
+    return /^https?:\/\//i.test(str);
+  }
+
+  function resolveUrl(url, baseUrl) {
+    if (!url || typeof url !== 'string') return url;
+    if (isValidUrl(url)) return url;
+    if (!baseUrl) return url;
+    // Relative path: ./filename → base + filename
+    if (url.startsWith('./')) {
+      var base = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+      return base + url.substring(2);
+    }
+    // Root path: /path → origin + path
+    if (url.startsWith('/')) {
+      var origin = baseUrl.match(/^(https?:\/\/[^\/]+)/);
+      return origin ? origin[1] + url : url;
+    }
+    return url;
+  }
+
+  function getFileType(url) {
+    var clean = url.split('?')[0].split('#')[0];
+    var ext = clean.split('.').pop().toLowerCase();
+    if (ext === 'jar') return 'jar';
+    if (ext === 'py') return 'py';
+    if (ext === 'js') return 'js';
+    if (ext === 'json') return 'json';
+    if (ext === 'txt') return 'txt';
+    if (ext === 'html' || ext === 'htm') return 'html';
+    if (['png','jpg','jpeg','gif','bmp','webp','svg','ico'].includes(ext)) return 'img';
+    if (['m3u','m3u8','xml','gz','zip','tar','tgz','bz2','7z','rar'].includes(ext)) return 'txt';
+    return null; // skip other types
+  }
+
+  function getFileName(url) {
+    try {
+      var path = url.split('?')[0];
+      var name = path.substring(path.lastIndexOf('/') + 1);
+      return name || 'unknown';
+    } catch (e) { return 'unknown'; }
+  }
+
+  // Deep resolve all "./" relative paths in a config object for display
+  function deepResolveConfig(obj, baseUrl) {
+    if (typeof obj === 'string') {
+      return resolveUrl(obj, baseUrl);
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(function(item) { return deepResolveConfig(item, baseUrl); });
+    }
+    if (obj && typeof obj === 'object') {
+      var result = {};
+      Object.keys(obj).forEach(function(key) {
+        result[key] = deepResolveConfig(obj[key], baseUrl);
+      });
+      return result;
+    }
+    return obj;
+  }
+
+  // Extract all file references from TVBox config (enhanced)
+  function parseConfig(config, baseUrl) {
+    var files = [];
+    var seen = new Set();
+    var SKIP_PATTERNS = [
+      /\/api\.php\/provide\/vod/i,
+      /\/api\.php\/app\//i,
+      /provide\/vod/i,
+      /\?url=/i,
+      /\{name\}/i,
+      /\{date\}/i,
+      /\{episode\}/i,
+      /proxy:\/\//i,
+      /\{[A-Za-z_][A-Za-z0-9_]*\}/
+    ];
+    var SKIP_EXTS = ['.php', '.asp', '.aspx', '.jsp', '.cgi', '.exe', '.dll', '.sh', '.bat'];
+    var DOWNLOAD_EXTS = ['.js', '.py', '.jar', '.json', '.txt', '.m3u', '.m3u8', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.css', '.html', '.htm', '.xml', '.zip', '.mp4', '.ts', '.woff', '.woff2', '.ttf', '.svg'];
+
+    function shouldSkip(url) {
+      if (!url || typeof url !== 'string') return true;
+      // Skip non-URL strings
+      if (!/^https?:\/\//i.test(url)) return true;
+      // Skip patterns
+      for (var i = 0; i < SKIP_PATTERNS.length; i++) {
+        if (SKIP_PATTERNS[i].test(url)) return true;
+      }
+      var clean = url.split('?')[0].split('#')[0];
+      var ext = clean.substring(clean.lastIndexOf('.')).toLowerCase();
+      if (SKIP_EXTS.indexOf(ext) >= 0) return true;
+      return false;
+    }
+
+    function getFileTypeEnhanced(url) {
+      var clean = url.split('?')[0].split('#')[0];
+      var ext = clean.split('.').pop().toLowerCase();
+      if (ext === 'jar') return 'jar';
+      if (ext === 'py') return 'py';
+      if (ext === 'js') return 'js';
+      if (ext === 'json') return 'json';
+      if (ext === 'txt' || ext === 'm3u' || ext === 'm3u8') return 'txt';
+      if (ext === 'html' || ext === 'htm') return 'html';
+      if (['png','jpg','jpeg','gif','bmp','webp','svg','ico'].indexOf(ext) >= 0) return 'img';
+      if (['css','xml','zip','mp4','ts','woff','woff2','ttf'].indexOf(ext) >= 0) return 'txt';
+      // Default to null (skip unknown types)
+      return null;
+    }
+
+    function addFile(rawUrl, path, forcedType) {
+      if (!rawUrl || typeof rawUrl !== 'string') return;
+      // Split by $$ separator (TVBox multi-value format)
+      var parts = rawUrl.split('$$');
+      for (var p = 0; p < parts.length; p++) {
+        var part = parts[p].trim();
+        if (!part) continue;
+        var url = resolveUrl(part, baseUrl);
+        if (shouldSkip(url)) continue;
+        if (seen.has(url)) continue;
+        var type = forcedType || getFileTypeEnhanced(url);
+        if (!type) continue; // skip non-whitelisted types
+        seen.add(url);
+        files.push({
+          url: url,
+          name: getFileName(url),
+          type: type,
+          path: path
+        });
+      }
+    }
+
+    // Helper: recursively collect from nested JSON strings
+    function emitRefs(v, path, forcedType) {
+      if (!v) return;
+      if (typeof v === 'string') {
+        var stripped = v.trim();
+        // Try to parse as nested JSON
+        if ((stripped.startsWith('{') && stripped.endsWith('}')) ||
+            (stripped.startsWith('[') && stripped.endsWith(']'))) {
+          try {
+            var parsed = JSON.parse(stripped);
+            emitRefs(parsed, path, forcedType);
+            return;
+          } catch (e) {}
+        }
+        addFile(stripped, path, forcedType);
+      } else if (typeof v === 'object' && v !== null) {
+        if (Array.isArray(v)) {
+          v.forEach(function(item, idx) {
+            emitRefs(item, path + '[' + idx + ']', forcedType);
+          });
+        } else {
+          Object.keys(v).forEach(function(k) {
+            emitRefs(v[k], path + '.' + k, forcedType);
+          });
+        }
+      }
+    }
+
+    // REF_ROOT_KEYS: spider
+    if (config.spider) {
+      emitRefs(config.spider, 'spider', 'jar');
+    }
+
+    // REF_GROUPS: sites, lives
+    var REF_GROUPS = ['sites', 'lives'];
+    var REF_FIELDS = ['api', 'url', 'jar', 'ext'];
+
+    REF_GROUPS.forEach(function(group) {
+      var arr = config[group];
+      if (!Array.isArray(arr)) return;
+      arr.forEach(function(item, i) {
+        if (!item || typeof item !== 'object') return;
+        REF_FIELDS.forEach(function(fk) {
+          if (fk in item) {
+            emitRefs(item[fk], group + '[' + i + '].' + fk);
+          }
+        });
+      });
+    });
+
+    // Also scan parses group
+    if (config.parses && Array.isArray(config.parses)) {
+      config.parses.forEach(function(p, i) {
+        if (!p || typeof p !== 'object') return;
+        ['ext', 'url'].forEach(function(fk) {
+          if (fk in p) emitRefs(p[fk], 'parses[' + i + '].' + fk);
+        });
+      });
+    }
+
+    // Ads / rules / other top-level extensions
+    if (config.ads && Array.isArray(config.ads)) {
+      config.ads.forEach(function(ad, i) {
+        if (typeof ad === 'string') addFile(ad, 'ads[' + i + ']');
+      });
+    }
+
+    // Walk and collect any remaining URL strings in config
+    function walkAndCollect(obj, path) {
+      if (!obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj)) {
+        obj.forEach(function(item, i) {
+          walkAndCollect(item, path + '[' + i + ']');
+        });
+        return;
+      }
+      Object.keys(obj).forEach(function(k) {
+        // Skip name/key fields (not URLs)
+        if (k === 'name' || k === 'key') return;
+        var v = obj[k];
+        var newPath = path + '.' + k;
+        var newField = (k === 'spider' || k === 'jar') ? k : path;
+        if (typeof v === 'string') {
+          var stripped = v.trim();
+          // Try parse as nested JSON
+          if ((stripped.startsWith('{') && stripped.endsWith('}')) ||
+              (stripped.startsWith('[') && stripped.endsWith(']'))) {
+            try {
+              var parsed = JSON.parse(stripped);
+              walkAndCollect(parsed, newPath);
+              return;
+            } catch (e) {}
+          }
+          // Split by $$
+          var parts = stripped.split('$$');
+          for (var pi = 0; pi < parts.length; pi++) {
+            var part = parts[pi].trim();
+            if (!part) continue;
+            var url = resolveUrl(part, baseUrl);
+            if (!shouldSkip(url) && !seen.has(url)) {
+              var type = getFileTypeEnhanced(url);
+              if (type) {
+                seen.add(url);
+                files.push({ url: url, name: getFileName(url), type: type, path: newPath });
+              }
+            }
+          }
+        } else if (typeof v === 'object' && v !== null) {
+          walkAndCollect(v, newPath);
+        }
+      });
+    }
+    walkAndCollect(config, 'root');
+
+    return files;
+  }
+
+  // ========== Parse button ==========
+  $('btnParse').addEventListener('click', async function () {
+    clearStatus('statusInput');
+    parsedFiles = [];
+    selectedFiles.clear();
+
+    var jsonText = '';
+    var baseUrl = '';
+    var activeTab = document.querySelector('.input-tab.active').getAttribute('data-input');
+
+    try {
+      if (activeTab === 'url') {
+        var url = $('urlInput').value.trim();
+        if (!url) { showStatus('statusInput', 'warn', '请输入接口 URL'); return; }
+        baseUrl = url;
+        showStatus('statusInput', 'info', '正在获取接口内容...');
+        try {
+          var resp = await fetch(url, { method: 'GET', redirect: 'follow' });
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          var ct = resp.headers.get('content-type') || '';
+          if (ct.includes('image/')) {
+            // Image-disguised config: decode bytes → find "**" → Base64 decode
+            var buf = await resp.arrayBuffer();
+            var decoded = tryDecodeImage(new Uint8Array(buf));
+            if (decoded) {
+              jsonText = decoded;
+              showStatus('statusInput', 'info', '检测到图片伪装接口，已自动解码');
+            } else {
+              showStatus('statusInput', 'err', '接口返回的是图片文件，但自动解码失败。此接口可能使用了非标准格式，请手动复制接口内容后使用「粘贴 JSON」方式。');
+              return;
+            }
+          } else {
+            jsonText = await resp.text();
+          }
+        } catch (e) {
+          // Fallback: try CORS proxy
+          showStatus('statusInput', 'info', '直接请求被浏览器阻止，正在尝试 CORS 代理...');
+          try {
+            var proxyUrls = [
+              'https://proxy.killcors.com?url=' + encodeURIComponent(url),
+              'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+              'https://corsproxy.io/?' + encodeURIComponent(url)
+            ];
+            var proxyResp = null;
+            for (var p = 0; p < proxyUrls.length; p++) {
+              try {
+                var r = await fetch(proxyUrls[p], { method: 'GET' });
+                if (r.ok) { proxyResp = r; break; }
+              } catch (pe) {}
+            }
+            if (!proxyResp) throw new Error('CORS 代理也无法获取');
+            var pct = proxyResp.headers.get('content-type') || '';
+            if (pct.includes('image/')) {
+              var pbuf = await proxyResp.arrayBuffer();
+              var pdecoded = tryDecodeImage(new Uint8Array(pbuf));
+              if (pdecoded) {
+                jsonText = pdecoded;
+                showStatus('statusInput', 'info', '通过代理检测到图片伪装接口，已自动解码');
+              } else {
+                showStatus('statusInput', 'err', '接口返回的是图片文件，但自动解码失败。请手动复制接口内容后使用「粘贴 JSON」方式。');
+                return;
+              }
+            } else {
+              jsonText = await proxyResp.text();
+            }
+          } catch (e2) {
+            var errMsg = '无法获取接口：' + e.message + '。';
+            if (e.message === 'Failed to fetch') {
+              errMsg = '无法获取接口（Failed to fetch）。常见原因：① 接口服务器未开启 CORS 跨域权限；② 页面为 HTTPS 但接口为 HTTP（混合内容被浏览器阻止）；③ 接口本身无法访问。已尝试 CORS 代理仍失败，建议改用「粘贴 JSON」方式，手动复制接口内容粘贴。';
+            }
+            showStatus('statusInput', 'err', errMsg);
+            document.querySelector('.input-tab[data-input="json"]').click();
+            return;
+          }
+        }
+      } else if (activeTab === 'json') {
+        jsonText = $('jsonInput').value.trim();
+        if (!jsonText) { showStatus('statusInput', 'warn', '请粘贴 JSON 内容'); return; }
+      } else if (activeTab === 'file') {
+        var file = $('fileInput').files[0];
+        if (!file) { showStatus('statusInput', 'warn', '请选择文件'); return; }
+        jsonText = await new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function () { resolve(reader.result); };
+          reader.onerror = function () { reject(new Error('读取失败')); };
+          reader.readAsText(file);
+        });
+      }
+
+      // Try to parse JSON (plain → decrypt → clean comments → extract → deep base64 decode)
+      var config = null;
+      try {
+        config = JSON.parse(jsonText);
+      } catch (e) {
+        // [Enhancement from Python] Try decrypt first
+        var decrypted = decryptConfig(jsonText);
+        if (decrypted) {
+          try { config = JSON.parse(decrypted); } catch(e2){}
+        }
+        if (!config) {
+          // [Enhancement from Python] Try clean comments and re-parse
+          var cleaned = cleanJsonComments(jsonText);
+          if (cleaned !== jsonText) {
+            try { config = JSON.parse(cleaned); } catch(e2) {}
+          }
+        }
+        if (!config) {
+          // [Enhancement from Python] Try extract JSON from text
+          var extracted = extractJsonFromText(jsonText);
+          if (extracted) {
+            try { config = JSON.parse(extracted); } catch(e2) {}
+          }
+        }
+        if (!config) {
+          // Show raw preview for diagnosis
+          var preview = jsonText.substring(0, 200).replace(/</g, '&lt;');
+          showStatus('statusInput', 'err', '无法解析 JSON 内容。如果接口已加密，请先用第三方工具解密后，复制解密内容到「粘贴 JSON」方式。原始内容前200字符：' + preview);
+          return;
+        }
+      }
+
+      // [Enhancement from Python] Deep base64 decode after parsing
+      config = deepBase64Decode(config);
+
+      parsedFiles = parseConfig(config, baseUrl);
+
+      // Show parsed JSON in left panel (resolve all ./ paths for display)
+      var displayConfig = deepResolveConfig(config, baseUrl);
+      var formattedJson = JSON.stringify(displayConfig, null, 2);
+      lastParsedJson = formattedJson;
+      $('parsedJsonCode').innerHTML = highlightJson(formattedJson);
+      $('parsedJsonWrap').style.display = 'block';
+      $('parsedJsonBox').classList.remove('collapsed');
+
+      // Select all by default
+      parsedFiles.forEach(function (f, i) { selectedFiles.add(i); });
+
+      if (parsedFiles.length === 0) {
+        showStatus('statusInput', 'warn', '未找到外部依赖文件，左侧已展示解析的接口配置 JSON。请检查接口是否包含 jar/py/js 等外部资源引用。');
+        renderFileList();
+        return;
+      }
+
+        showStatus('statusInput', 'ok', '解析成功：配置 JSON 已展示在左侧，找到 ' + parsedFiles.length + ' 个外部依赖文件');
+      renderFileList();
+      updateStats();
+    } catch (e) {
+      showStatus('statusInput', 'err', '解析失败：' + e.message);
+    }
+  });
+
+  // ========== Render file list ==========
+  function renderFileList() {
+    var tbody = $('fileList');
+    if (parsedFiles.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:40px;">请先解析接口配置</td></tr>';
+      $('statsBar').style.display = 'none';
+      return;
+    }
+
+    $('statsBar').style.display = 'flex';
+    tbody.innerHTML = parsedFiles.map(function (f, i) {
+      var typeClass = 'type-' + f.type;
+      var typeLabel = f.type.toUpperCase();
+      var checked = selectedFiles.has(i) ? 'checked' : '';
+      return '<tr>' +
+        '<td><input type="checkbox" class="chk file-chk" data-idx="' + i + '" ' + checked + '></td>' +
+        '<td><div class="file-name">' + escapeHtml(f.name) + '</div></td>' +
+        '<td><span class="file-type ' + typeClass + '">' + typeLabel + '</span></td>' +
+        '<td><div class="file-path">' + escapeHtml(f.path) + '</div></td>' +
+        '<td><div class="file-url">' + escapeHtml(f.url.substring(0, 60)) + (f.url.length > 60 ? '...' : '') + '</div></td>' +
+        '</tr>';
+    }).join('');
+
+    // Bind checkbox events
+    tbody.querySelectorAll('.file-chk').forEach(function (chk) {
+      chk.addEventListener('change', function () {
+        var idx = parseInt(this.getAttribute('data-idx'));
+        if (this.checked) selectedFiles.add(idx);
+        else selectedFiles.delete(idx);
+        updateSelectedCount();
+      });
+    });
+
+    updateSelectedCount();
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function updateStats() {
+    var whitelist = ['jar','py','js','json','txt','html','img'];
+    whitelist.forEach(function (t) {
+      var count = parsedFiles.filter(function (f) { return f.type === t; }).length;
+      var el = $('stat' + t.charAt(0).toUpperCase() + t.slice(1));
+      if (el) el.textContent = count;
+    });
+    $('statTotal').textContent = parsedFiles.length;
+  }
+
+  function updateSelectedCount() {
+    $('selectedCount').textContent = '已选择 ' + selectedFiles.size + ' 个';
+    $('chkSelectAll').checked = selectedFiles.size === parsedFiles.length && parsedFiles.length > 0;
+  }
+
+  // Select all checkbox
+  $('chkSelectAll').addEventListener('change', function () {
+    if (this.checked) {
+      parsedFiles.forEach(function (_, i) { selectedFiles.add(i); });
+    } else {
+      selectedFiles.clear();
+    }
+    renderFileList();
+  });
+
+  // ========== One-click pack download ==========
+  $('btnPackDownload').addEventListener('click', async function () {
+    clearStatus('statusScript');
+    if (selectedFiles.size === 0) { showStatus('statusScript', 'warn', '请先选择要下载的文件'); return; }
+
+    if (typeof JSZip === 'undefined') {
+      showStatus('statusScript', 'err', 'JSZip 库未加载，请检查网络连接后刷新页面');
+      return;
+    }
+
+    var files = parsedFiles.filter(function (_, i) { return selectedFiles.has(i); });
+    var zip = new JSZip();
+    var total = files.length;
+    var success = 0;
+    var failed = [];
+    var logEl = $('progressLog');
+    var fillEl = $('progressFill');
+    var textEl = $('progressText');
+    var pctEl = $('progressPercent');
+    var wrapEl = $('progressWrap');
+
+    wrapEl.classList.add('show');
+    logEl.innerHTML = '';
+    fillEl.style.width = '0%';
+    textEl.textContent = '开始下载...';
+    pctEl.textContent = '0%';
+
+    // Try to use fetch with AbortController for timeout
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      var idx = i + 1;
+      var percent = Math.round((idx / total) * 100);
+      textEl.textContent = '[' + idx + '/' + total + '] ' + f.name;
+      pctEl.textContent = percent + '%';
+      fillEl.style.width = percent + '%';
+
+      try {
+        // Attempt fetch with timeout
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function () { controller.abort(); }, 15000);
+        var resp = await fetch(f.url, { method: 'GET', redirect: 'follow', signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+        var blob = await resp.blob();
+        var folder = zip.folder(f.type) || zip;
+        folder.file(f.name, blob);
+        success++;
+        logEl.innerHTML += '<span class="ok">✓ ' + escapeHtml(f.name) + ' (' + f.type + ')</span><br>';
+      } catch (e) {
+        failed.push({ name: f.name, url: f.url, error: e.message });
+        logEl.innerHTML += '<span class="err">✗ ' + escapeHtml(f.name) + ' - ' + escapeHtml(e.message) + '</span><br>';
+      }
+
+      // Auto-scroll log to bottom
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    fillEl.style.width = '100%';
+    textEl.textContent = '打包中...';
+    pctEl.textContent = '100%';
+
+    // Add the parsed TVBox config JSON into the zip
+    if (lastParsedJson) {
+      zip.file('tvbox_config.json', lastParsedJson);
+    }
+
+    try {
+      var zipBlob = await zip.generateAsync({ type: 'blob' });
+      var url = URL.createObjectURL(zipBlob);
+      var a = document.createElement('a');
+      a.download = 'tvbox_dependencies_' + Date.now() + '.zip';
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      if (failed.length > 0) {
+        showStatus('statusScript', 'warn', '打包完成：' + success + '/' + total + ' 成功，' + failed.length + ' 个失败（可能因 CORS 限制）');
+      } else {
+        showStatus('statusScript', 'ok', '全部 ' + total + ' 个文件打包下载完成');
+      }
+    } catch (e) {
+      showStatus('statusScript', 'err', '打包失败：' + e.message);
+    }
+
+    // Keep progress visible for a moment, then hide
+    setTimeout(function () { wrapEl.classList.remove('show'); }, 5000);
+  });
+
+  // ========== Download JAR only ==========
+  $('btnDownloadJar').addEventListener('click', async function () {
+    clearStatus('statusScript');
+    var jarFiles = parsedFiles.filter(function (f) { return f.type === 'jar'; });
+    if (jarFiles.length === 0) { showStatus('statusScript', 'warn', '未找到 jar 文件'); return; }
+
+    var total = jarFiles.length;
+    var success = 0;
+    var failed = [];
+    var logEl = $('progressLog');
+    var fillEl = $('progressFill');
+    var textEl = $('progressText');
+    var pctEl = $('progressPercent');
+    var wrapEl = $('progressWrap');
+
+    wrapEl.classList.add('show');
+    logEl.innerHTML = '';
+    fillEl.style.width = '0%';
+    textEl.textContent = '开始下载 jar...';
+    pctEl.textContent = '0%';
+
+    for (var i = 0; i < jarFiles.length; i++) {
+      var f = jarFiles[i];
+      var idx = i + 1;
+      var percent = Math.round((idx / total) * 100);
+      textEl.textContent = '[' + idx + '/' + total + '] ' + f.name;
+      pctEl.textContent = percent + '%';
+      fillEl.style.width = percent + '%';
+
+      try {
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function () { controller.abort(); }, 15000);
+        var resp = await fetch(f.url, { method: 'GET', redirect: 'follow', signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+        var blob = await resp.blob();
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.download = f.name;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+        success++;
+        logEl.innerHTML += '<span class="ok">✓ ' + escapeHtml(f.name) + ' (' + f.type + ')</span><br>';
+      } catch (e) {
+        failed.push({ name: f.name, url: f.url, error: e.message });
+        logEl.innerHTML += '<span class="err">✗ ' + escapeHtml(f.name) + ' - ' + escapeHtml(e.message) + '</span><br>';
+      }
+
+      logEl.scrollTop = logEl.scrollHeight;
+
+      // Small delay between downloads to avoid browser blocking
+      if (i < jarFiles.length - 1) {
+        await new Promise(function (resolve) { setTimeout(resolve, 300); });
+      }
+    }
+
+    fillEl.style.width = '100%';
+    textEl.textContent = '下载完成';
+    pctEl.textContent = '100%';
+
+    if (failed.length > 0) {
+      showStatus('statusScript', 'warn', 'jar 下载完成：' + success + '/' + total + ' 成功，' + failed.length + ' 个失败（可能因 CORS 限制）');
+    } else {
+      showStatus('statusScript', 'ok', '全部 ' + total + ' 个 jar 文件下载完成');
+    }
+
+    setTimeout(function () { wrapEl.classList.remove('show'); }, 5000);
+  });
+
+  // ========== Clear & Sample ==========
+  $('btnClearInput').addEventListener('click', function () {
+    $('urlInput').value = '';
+    $('jsonInput').value = '';
+    $('fileInput').value = '';
+    $('fileName').style.display = 'none';
+    clearStatus('statusInput');
+    parsedFiles = [];
+    selectedFiles.clear();
+    renderFileList();
+    $('parsedJsonWrap').style.display = 'none';
+    $('parsedJsonCode').textContent = '{}';
+    $('parsedJsonBox').classList.remove('collapsed');
+  });
+
+  $('btnSample').addEventListener('click', function () {
+    var sample = {
+      "spider": "https://example.com/spider.jar",
+      "sites": [
+        { "key": "douban", "name": "豆瓣", "type": 3, "api": "csp_DouBan", "ext": "https://example.com/douban.py", "jar": "https://example.com/douban.jar" },
+        { "key": "bilibili", "name": "哔哩哔哩", "type": 3, "api": "csp_Bili", "ext": "https://example.com/bilibili.js" }
+      ],
+      "parses": [
+        { "name": "解析1", "type": 1, "url": "https://example.com/parse1.py", "ext": "https://example.com/parse_ext.js" }
+      ],
+      "lives": [
+        { "name": "直播", "type": 0, "url": "https://example.com/live.json", "ext": "https://example.com/live.jar" }
+      ]
+    };
+    $('jsonInput').value = JSON.stringify(sample, null, 2);
+    document.querySelector('.input-tab[data-input="json"]').click();
+    showStatus('statusInput', 'info', '已加载示例，点击「解析依赖」查看效果');
+  });
+
+  // ========== File dropzone ==========
+  var dropzone = $('fileDropzone');
+  dropzone.addEventListener('click', function () { $('fileInput').click(); });
+  $('fileInput').addEventListener('change', function () {
+    var f = $('fileInput').files[0];
+    if (f) {
+      $('fileName').textContent = f.name;
+      $('fileName').style.display = 'block';
+    }
+  });
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.style.borderColor = 'var(--accent)'; dropzone.style.background = 'var(--accent-glow)'; });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.style.borderColor = 'var(--border)'; dropzone.style.background = 'rgba(0,0,0,0.15)'; });
+  });
+  dropzone.addEventListener('drop', function (e) {
+    var f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) {
+      $('fileInput').files = e.dataTransfer.files;
+      $('fileName').textContent = f.name;
+      $('fileName').style.display = 'block';
+    }
+  });
+
+  // ========== Utilities ==========
+  function copyToClipboard(text, statusId) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          showStatus(statusId, 'ok', '已复制到剪贴板');
+        }, function () { fallbackCopy(text, statusId); });
+      } else { fallbackCopy(text, statusId); }
+    } catch (e) { fallbackCopy(text, statusId); }
+  }
+  function fallbackCopy(text, statusId) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showStatus(statusId, 'ok', '已复制（兼容模式）');
+  }
+  function downloadText(filename, text) {
+    var blob = new Blob([text], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.download = filename;
+    a.href = url;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ========== Config Editor ==========
+  var editorData = { spider: "", wallpaper: "", logo: "", warningText: "", sites: [], parses: [], lives: [], hosts: [], ads: [], sniffer: {} };
+  var editorCurrentTab = 'basic';
+
+  document.querySelectorAll('.editor-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.editor-tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.editor-section[id^="editor-"]').forEach(function (s) { s.style.display = 'none'; });
+      tab.classList.add('active');
+      editorCurrentTab = tab.getAttribute('data-editor');
+      $('editor-' + editorCurrentTab).style.display = 'block';
+      if (editorCurrentTab === 'preview') updateJsonPreview();
+    });
+  });
+
+  function updateJsonPreview() {
+    var json = buildEditorJson();
+    $('edJsonPreview').textContent = JSON.stringify(json, null, 2);
+  }
+
+  function buildEditorJson() {
+    var json = {};
+    if (editorData.spider) json.spider = editorData.spider;
+    if (editorData.wallpaper) json.wallpaper = editorData.wallpaper;
+    if (editorData.logo) json.logo = editorData.logo;
+    if (editorData.warningText) json.warningText = editorData.warningText;
+    if (editorData.sites.length > 0) json.sites = editorData.sites;
+    if (editorData.parses.length > 0) json.parses = editorData.parses;
+    if (editorData.lives.length > 0) json.lives = editorData.lives;
+    if (editorData.hosts.length > 0) json.hosts = editorData.hosts;
+    if (editorData.ads.length > 0) json.ads = editorData.ads;
+    if (Object.keys(editorData.sniffer).length > 0) json.sniffer = editorData.sniffer;
+    return json;
+  }
+
+  function loadEditorJson(json) {
+    editorData = {
+      spider: json.spider || "", wallpaper: json.wallpaper || "", logo: json.logo || "",
+      warningText: json.warningText || "",
+      sites: json.sites ? JSON.parse(JSON.stringify(json.sites)) : [],
+      parses: json.parses ? JSON.parse(JSON.stringify(json.parses)) : [],
+      lives: json.lives ? JSON.parse(JSON.stringify(json.lives)) : [],
+      hosts: json.hosts ? JSON.parse(JSON.stringify(json.hosts)) : [],
+      ads: json.ads || [], sniffer: json.sniffer ? JSON.parse(JSON.stringify(json.sniffer)) : {}
+    };
+    refreshEditorForms();
+  }
+
+  function refreshEditorForms() {
+    $('edSpider').value = editorData.spider; $('edWallpaper').value = editorData.wallpaper;
+    $('edLogo').value = editorData.logo; $('edWarning').value = editorData.warningText;
+    $('edHosts').value = editorData.hosts.length > 0 ? JSON.stringify(editorData.hosts, null, 2) : '';
+    $('edAds').value = Array.isArray(editorData.ads) ? editorData.ads.join(',') : '';
+    $('edSniffer').value = Object.keys(editorData.sniffer).length > 0 ? JSON.stringify(editorData.sniffer, null, 2) : '';
+    renderSiteList(); renderParseList(); renderLiveList(); updateJsonPreview();
+  }
+
+  function renderSiteList() {
+    $('edSiteCount').textContent = editorData.sites.length;
+    var c = $('edSiteList');
+    if (editorData.sites.length === 0) { c.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:16px;">暂无站点</div>'; return; }
+    c.innerHTML = editorData.sites.map(function(s,i){ var ext=s.ext? (typeof s.ext==='string'?s.ext:JSON.stringify(s.ext).substring(0,50)) :''; return '<div class="editor-item"><div class="editor-item-header"><span class="editor-item-title">'+escapeHtml(s.name||s.key||'未命名')+'</span><div class="editor-item-actions"><button onclick="editSite('+i+')">编辑</button><button onclick="deleteSite('+i+')" style="color:var(--danger);">删除</button></div></div><div style="font-size:11px;color:var(--text-dim);line-height:1.6;">key: '+escapeHtml(s.key||'')+' | api: '+escapeHtml(s.api||'')+'<br>type: '+(s.type||3)+' | ext: '+escapeHtml(ext)+'</div></div>'; }).join('');
+  }
+  window.editSite = function(idx){ var s=editorData.sites[idx]; var nk=prompt('Key:',s.key||''); if(nk===null)return; var nn=prompt('名称:',s.name||''); if(nn===null)return; var na=prompt('API:',s.api||''); if(na===null)return; var nt=prompt('Type (默认3):',s.type||3); if(nt===null)return; var ne=prompt('Ext:',s.ext||''); if(ne===null)return; var nj=prompt('Jar:',s.jar||''); if(nj===null)return; editorData.sites[idx]={key:nk.trim(),name:nn.trim(),api:na.trim(),type:parseInt(nt)||3,ext:ne.trim()||undefined,jar:nj.trim()||undefined}; renderSiteList(); updateJsonPreview(); };
+  window.deleteSite = function(idx){ if(!confirm('确定删除?'))return; editorData.sites.splice(idx,1); renderSiteList(); updateJsonPreview(); };
+  $('btnAddSite').addEventListener('click',function(){ var k=prompt('Key:'); if(!k)return; var n=prompt('名称:'); if(!n)return; var a=prompt('API:'); if(!a)return; editorData.sites.push({key:k.trim(),name:n.trim(),api:a.trim(),type:3}); renderSiteList(); updateJsonPreview(); });
+  $('btnClearSites').addEventListener('click',function(){ if(!confirm('清空所有站点?'))return; editorData.sites=[]; renderSiteList(); updateJsonPreview(); });
+
+  function renderParseList() {
+    $('edParseCount').textContent = editorData.parses.length;
+    var c = $('edParseList');
+    if (editorData.parses.length === 0) { c.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:16px;">暂无解析器</div>'; return; }
+    c.innerHTML = editorData.parses.map(function(p,i){ return '<div class="editor-item"><div class="editor-item-header"><span class="editor-item-title">'+escapeHtml(p.name||'未命名')+'</span><div class="editor-item-actions"><button onclick="editParse('+i+')">编辑</button><button onclick="deleteParse('+i+')" style="color:var(--danger);">删除</button></div></div><div style="font-size:11px;color:var(--text-dim);">url: '+escapeHtml(p.url||'')+' | type: '+(p.type||1)+'</div></div>'; }).join('');
+  }
+  window.editParse = function(idx){ var p=editorData.parses[idx]; var nn=prompt('名称:',p.name||''); if(nn===null)return; var nu=prompt('URL:',p.url||''); if(nu===null)return; var nt=prompt('Type (默认1):',p.type||1); if(nt===null)return; editorData.parses[idx]={name:nn.trim(),url:nu.trim(),type:parseInt(nt)||1}; renderParseList(); updateJsonPreview(); };
+  window.deleteParse = function(idx){ if(!confirm('确定删除?'))return; editorData.parses.splice(idx,1); renderParseList(); updateJsonPreview(); };
+  $('btnAddParse').addEventListener('click',function(){ var n=prompt('解析器名称:'); if(!n)return; var u=prompt('解析URL:'); if(!u)return; editorData.parses.push({name:n.trim(),url:u.trim(),type:1}); renderParseList(); updateJsonPreview(); });
+  $('btnClearParses').addEventListener('click',function(){ if(!confirm('清空所有解析器?'))return; editorData.parses=[]; renderParseList(); updateJsonPreview(); });
+
+  function renderLiveList() {
+    $('edLiveCount').textContent = editorData.lives.length;
+    var c = $('edLiveList');
+    if (editorData.lives.length === 0) { c.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:16px;">暂无直播线路</div>'; return; }
+    c.innerHTML = editorData.lives.map(function(l,i){ return '<div class="editor-item"><div class="editor-item-header"><span class="editor-item-title">'+escapeHtml(l.name||'未命名')+'</span><div class="editor-item-actions"><button onclick="editLive('+i+')">编辑</button><button onclick="deleteLive('+i+')" style="color:var(--danger);">删除</button></div></div><div style="font-size:11px;color:var(--text-dim);">url: '+escapeHtml(l.url||'')+' | type: '+(l.type||0)+'</div></div>'; }).join('');
+  }
+  window.editLive = function(idx){ var l=editorData.lives[idx]; var nn=prompt('名称:',l.name||''); if(nn===null)return; var nu=prompt('直播URL:',l.url||''); if(nu===null)return; var nt=prompt('Type (默认0):',l.type||0); if(nt===null)return; var ne=prompt('EPG (可选):',l.epg||''); if(ne===null)return; editorData.lives[idx]={name:nn.trim(),url:nu.trim(),type:parseInt(nt)||0,epg:ne.trim()||undefined}; renderLiveList(); updateJsonPreview(); };
+  window.deleteLive = function(idx){ if(!confirm('确定删除?'))return; editorData.lives.splice(idx,1); renderLiveList(); updateJsonPreview(); };
+  $('btnAddLive').addEventListener('click',function(){ var n=prompt('线路名称:'); if(!n)return; var u=prompt('直播URL:'); if(!u)return; editorData.lives.push({name:n.trim(),url:u.trim(),type:0}); renderLiveList(); updateJsonPreview(); });
+  $('btnClearLives').addEventListener('click',function(){ if(!confirm('清空所有线路?'))return; editorData.lives=[]; renderLiveList(); updateJsonPreview(); });
+
+  ['edSpider','edWallpaper','edLogo','edWarning'].forEach(function(id){ $(id).addEventListener('input',function(){ var f=id.replace('ed','').toLowerCase(); if(f==='spider')editorData.spider=$(id).value; else if(f==='wallpaper')editorData.wallpaper=$(id).value; else if(f==='logo')editorData.logo=$(id).value; else if(f==='warning')editorData.warningText=$(id).value; updateJsonPreview(); }); });
+  $('edHosts').addEventListener('input',function(){ try{var v=$('edHosts').value.trim(); editorData.hosts=v?JSON.parse(v):[];}catch(e){} updateJsonPreview(); });
+  $('edAds').addEventListener('input',function(){ var v=$('edAds').value.trim(); editorData.ads=v?v.split(',').map(function(s){return s.trim();}).filter(function(s){return s;}):[]; updateJsonPreview(); });
+  $('edSniffer').addEventListener('input',function(){ try{var v=$('edSniffer').value.trim(); editorData.sniffer=v?JSON.parse(v):{};}catch(e){} updateJsonPreview(); });
+
+  $('btnEdGenerate').addEventListener('click',function(){ updateJsonPreview(); document.querySelectorAll('.editor-tab').forEach(function(t){t.classList.remove('active');}); document.querySelectorAll('.editor-section[id^="editor-"]').forEach(function(s){s.style.display='none';}); editorCurrentTab='preview'; $('editor-preview').style.display='block'; document.querySelector('.editor-tab[data-editor="preview"]').classList.add('active'); showStatus('statusEditor','ok','JSON已生成'); });
+  $('btnEdImport').addEventListener('click',function(){ var input=prompt('粘贴TVBox配置JSON:'); if(!input)return; try{var json=JSON.parse(input); loadEditorJson(json); showStatus('statusEditor','ok','导入成功');}catch(e){showStatus('statusEditor','err','导入失败: '+e.message);} });
+  $('btnEdImportUrl').addEventListener('click',function(){
+    var url=prompt('输入配置接口 URL (http/https):'); if(!url)return;
+    url=url.trim(); if(!/^https?:\/\//i.test(url)){ showStatus('statusEditor','err','URL 必须以 http:// 或 https:// 开头'); return; }
+    showStatus('statusEditor','info','正在拉取 '+url+' …');
+    fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+      .then(function(text){
+        var data=text; var m=text.match(/\*\*(.{0,64})\*\*\s*$/);
+        if(m){ try{ data=atob(m[1].replace(/-/g,'+').replace(/_/g,'/')); }catch(e2){ data=text; } }
+        var json=JSON.parse(data.trim()); if(json && typeof json==='object'){ loadEditorJson(json); showStatus('statusEditor','ok','URL 导入成功'); } else throw new Error('内容不是 JSON 对象');
+      })
+      .catch(function(e){ showStatus('statusEditor','err','URL 导入失败: '+e.message+'（可能被 CORS 拦截，可粘贴原文本重试）'); });
+  });
+  $('btnEdImportFile').addEventListener('click',function(){ $('edFileInput').click(); });
+  $('edFileInput').addEventListener('change',function(){
+    var f=this.files && this.files[0]; if(!f) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var text=ev.target.result; var m=text.match(/\*\*(.{0,64})\*\*\s*$/);
+        if(m){ try{ text=atob(m[1].replace(/-/g,'+').replace(/_/g,'/')); }catch(e2){} }
+        var json=JSON.parse(text.trim());
+        if(json && typeof json==='object'){ loadEditorJson(json); showStatus('statusEditor','ok','文件导入成功: '+f.name); }
+        else throw new Error('内容不是 JSON 对象');
+      }catch(e){ showStatus('statusEditor','err','文件导入失败: '+e.message); }
+    };
+    reader.onerror=function(){ showStatus('statusEditor','err','文件读取失败'); };
+    reader.readAsText(f);
+    this.value='';
+  });
+  $('btnEdLoadSample').addEventListener('click',function(){ var sample={spider:"https://example.com/spider.jar",wallpaper:"https://example.com/wallpaper.jpg",logo:"https://example.com/logo.png",warningText:"资源来自网络，仅供学习使用",sites:[{key:"douban",name:"豆瓣推荐",type:3,api:"csp_Douban"},{key:"bilibili",name:"哔哩哔哩",type:3,api:"csp_Bili",ext:"https://example.com/bilibili.js"}],parses:[{name:"解析A",type:1,url:"https://example.com/parse.js"}],lives:[{name:"默认直播",type:0,url:"https://example.com/live.txt"}]}; loadEditorJson(sample); showStatus('statusEditor','ok','已加载示例'); });
+  $('btnEdCopy').addEventListener('click',function(){ copyToClipboard($('edJsonPreview').textContent,'statusEditor'); });
+  $('btnEdDownload').addEventListener('click',function(){ var json=buildEditorJson(); downloadText('tvbox_config_'+Date.now()+'.json',JSON.stringify(json,null,2)); showStatus('statusEditor','ok','配置JSON已下载'); });
+  $('btnEdParseDown').addEventListener('click',function(){ var json=buildEditorJson(); document.querySelector('.input-tab[data-input="json"]').click(); $('jsonInput').value=JSON.stringify(json,null,2); $('btnParse').click(); showStatus('statusEditor','ok','已切换到解析下载'); });
+  $('btnEdClear').addEventListener('click',function(){ if(!confirm('确定清空所有配置?'))return; editorData={spider:"",wallpaper:"",logo:"",warningText:"",sites:[],parses:[],lives:[],hosts:[],ads:[],sniffer:{}}; refreshEditorForms(); showStatus('statusEditor','ok','已清空'); });
+
+  // ========== JSON viewer helpers ==========
+  var lastParsedJson = '';
+  function highlightJson(str) {
+    return str.replace(/"(\\.|[^"\\])*"/g, '<span class="json-string">$&</span>')
+      .replace(/\b(true|false)\b/g, '<span class="json-bool">$1</span>')
+      .replace(/\b(null)\b/g, '<span class="json-null">$1</span>')
+      .replace(/(-?\d+\.?\d*)([eE][+-]?\d+)?\b/g, '<span class="json-number">$1$2</span>')
+      .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:');
+  }
+  $('btnJsonCopy').addEventListener('click', function(){
+    if(!lastParsedJson){ showStatus('statusInput','warn','暂无解析的 JSON'); return; }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(lastParsedJson).then(function () {
+          showStatus('statusInput', 'ok', '已复制 JSON 到剪贴板');
+        }, function () {
+          fallbackCopy(lastParsedJson, 'statusInput');
+        });
+      } else {
+        fallbackCopy(lastParsedJson, 'statusInput');
+      }
+    } catch (e) {
+      fallbackCopy(lastParsedJson, 'statusInput');
+    }
+  });
+  $('btnJsonDownloadTop').addEventListener('click', function(){
+    if(!lastParsedJson){ showStatus('statusInput','warn','暂无解析的 JSON'); return; }
+    try {
+      var blob = new Blob([lastParsedJson], {type:'application/json'});
+      var a = document.createElement('a'); a.download='parsed_config_'+Date.now()+'.json'; a.href=URL.createObjectURL(blob); a.click(); URL.revokeObjectURL(a.href);
+      showStatus('statusInput', 'ok', 'JSON 文件下载已触发');
+    } catch(e) {
+      showStatus('statusInput','err','下载失败: '+e.message);
+    }
+  });
+  var box = $('parsedJsonBox');
+  if (box) {
+    box.classList.add('collapsed');
+  }
+})();
+</script>
+</body>
+</html>
