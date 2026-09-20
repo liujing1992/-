@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVBox线路解析下载工具</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+<style>
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-panel: rgba(16, 22, 48, 0.95);
+    --bg-hover: rgba(30, 40, 80, 0.5);
+    --border: rgba(100, 130, 255, 0.12);
+    --border-active: rgba(0, 212, 255, 0.5);
+    --text: #d0d8f0;
+    --text-dim: #6b7a9c;
+    --accent: #00d4ff;
+    --accent-2: #8b5cf6;
+    --accent-glow: rgba(0, 212, 255, 0.15);
+    --success: #2ed573;
+    --warn: #ffa502;
+    --danger: #ff4757;
+    --radius: 12px;
+    --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg-deep);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 24px 16px 40px; flex: 1; width: 100%; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 24px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--border-active); background: rgba(0, 212, 255, 0.06);
+    font-size: 11.5px; color: var(--accent); font-weight: 600;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+  h1 { font-size: 26px; font-weight: 700; margin: 10px 0 6px; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--text-dim); font-size: 13px; max-width: 600px; margin: 0 auto; }
+
+  /* Input methods tabs */
+  .input-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .input-tab {
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg-panel); color: var(--text-dim); font-size: 13px;
+    transition: all .15s; user-select: none; font-weight: 500;
+  }
+  .input-tab:hover { border-color: var(--border-active); color: var(--text); }
+  .input-tab.active {
+    color: #081020; font-weight: 700; border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), #40e0ff);
+  }
+
+  /* Layout */
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .panel-title { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  /* Input */
+  textarea, input[type="text"], input[type="url"] {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; outline: none;
+    transition: border-color .2s, box-shadow .2s; font-family: var(--font-mono);
+  }
+  textarea:focus, input:focus { border-color: var(--border-active); box-shadow: 0 0 0 3px var(--accent-glow); }
+  textarea::placeholder, input::placeholder { color: #4a5270; }
+  textarea { min-height: 180px; resize: vertical; line-height: 1.7; }
+
+  .btn {
+    padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  }
+  .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), #40e0ff); color: #081020; box-shadow: 0 3px 14px rgba(0,212,255,0.2); }
+  .btn.secondary { background: transparent; border-color: var(--border); color: var(--text); font-weight: 500; }
+  .btn.secondary:hover { border-color: var(--border-active); }
+  .btn.success { background: rgba(46,213,115,0.12); border-color: rgba(46,213,115,0.25); color: var(--success); }
+  .btn.danger { background: rgba(255,71,87,0.1); border-color: rgba(255,71,87,0.2); color: var(--danger); }
+  .btn.info { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.2); color: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+
+  /* File list table */
+  .file-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .file-table th { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); color: var(--text-dim); font-weight: 500; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+  .file-table td { padding: 8px; border-bottom: 1px solid rgba(100,130,255,0.06); vertical-align: middle; }
+  .file-table tr:hover { background: var(--bg-hover); }
+  .file-table td:first-child { width: 30px; text-align: center; }
+  .file-table td:last-child { width: 120px; }
+  .file-name { font-weight: 500; color: var(--text); word-break: break-all; }
+  .file-path { color: var(--text-dim); font-size: 11px; word-break: break-all; max-width: 300px; }
+  .file-type { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .type-jar { background: rgba(255,165,2,0.12); color: var(--warn); }
+  .type-py { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .type-js { background: rgba(139,92,246,0.12); color: var(--accent-2); }
+  .type-json { background: rgba(46,213,115,0.1); color: var(--success); }
+  .type-txt { background: rgba(200,200,200,0.12); color: #c0c0c0; }
+  .type-img { background: rgba(255,105,180,0.12); color: #ff69b4; }
+  .type-video { background: rgba(220,20,60,0.12); color: #dc143c; }
+  .type-audio { background: rgba(30,144,255,0.12); color: #1e90ff; }
+  .type-zip { background: rgba(218,165,32,0.12); color: #daa520; }
+  .type-other { background: rgba(107,122,156,0.1); color: var(--text-dim); }
+
+  /* Progress */
+  .progress-wrap {
+    margin: 12px 0; padding: 12px; border-radius: 10px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    display: none;
+  }
+  .progress-wrap.show { display: block; }
+  .progress-info {
+    display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 6px; border-radius: 3px; background: rgba(0,0,0,0.5); overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .3s ease;
+  }
+  .progress-log {
+    margin-top: 8px; font-size: 11px; color: var(--text-dim);
+    max-height: 120px; overflow-y: auto; font-family: var(--font-mono);
+    line-height: 1.6;
+  }
+  .progress-log .ok { color: var(--success); }
+  .progress-log .err { color: var(--danger); }
+  .progress-log .warn { color: var(--warn); }
+  .file-size { color: var(--text-dim); font-size: 11px; }
+  .file-url { font-size: 11px; color: var(--text-dim); word-break: break-all; max-width: 200px; }
+
+  /* Checkbox */
+  .chk { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+  /* Status */
+  .status { display: none; margin-top: 10px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; }
+  .status.show { display: block; }
+  .status.ok { background: rgba(46,213,115,0.07); border: 1px solid rgba(46,213,115,0.2); color: var(--success); }
+  .status.err { background: rgba(255,71,87,0.05); border: 1px solid rgba(255,71,87,0.2); color: var(--danger); }
+  .status.warn { background: rgba(255,165,2,0.05); border: 1px solid rgba(255,165,2,0.2); color: var(--warn); }
+  .status.info { background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15); color: var(--accent); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 16px; padding: 10px 14px; border-radius: 8px;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--border); margin-bottom: 12px;
+  }
+  .stat-item { display: flex; align-items: center; gap: 6px; }
+  .stat-num { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-dim); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+  footer { text-align: center; color: var(--text-dim); font-size: 12px; margin-top: 20px; }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 16px 10px 28px; }
+    h1 { font-size: 20px; }
+    .file-table .file-path, .file-table .file-url { max-width: 120px; }
+  }
+
+  .editor-pane { display: none; }
+  .editor-pane.active { display: block; }
+  .editor-section { margin-bottom: 16px; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); }
+  .editor-section-title { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  .editor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .editor-grid { grid-template-columns: 1fr; } }
+  .editor-field { margin-bottom: 8px; }
+  .editor-field label { display: block; font-size: 11.5px; color: var(--text-dim); margin-bottom: 3px; }
+  .editor-field input, .editor-field select { width: 100%; padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text); font-size: 12.5px; outline: none; font-family: var(--font-mono); }
+  .editor-field input:focus, .editor-field select:focus { border-color: var(--border-active); }
+  .editor-field input::placeholder { color: #4a5270; }
+  .editor-list { max-height: 300px; overflow-y: auto; }
+  .editor-item { padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.25); border: 1px solid var(--border); margin-bottom: 8px; }
+  .editor-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .editor-item-title { font-size: 12.5px; font-weight: 600; color: var(--text); }
+  .editor-item-actions { display: flex; gap: 4px; }
+  .editor-item-actions button { padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-dim); }
+  .editor-item-actions button:hover { border-color: var(--danger); color: var(--danger); }
+  .editor-preview { background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.6; max-height: 250px; overflow: auto; color: var(--text-dim); white-space: pre; }
+  .editor-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+  .editor-tab { padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text-dim); transition: all .15s; }
+  .editor-tab:hover { border-color: var(--border-active); color: var(--text); }
+  .editor-tab.active { background: var(--accent); color: #081020; border-color: var(--accent); font-weight: 600; }
+
+  /* Parsed JSON viewer */
+  .parsed-json-wrap { margin-top: 14px; animation: fadeIn .3s ease; }
+  .parsed-json-box {
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; max-height: 520px; overflow-y: auto; transition: max-height .25s ease;
+  }
+  .parsed-json-box.collapsed { max-height: 0; border-color: transparent; }
+  .parsed-json-box pre { margin: 0; padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; line-height: 1.65; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+  .parsed-json-box .json-key   { color: #7dd3fc; }
+  .parsed-json-box .json-string{ color: #a7f3d0; }
+  .parsed-json-box .json-number{ color: #fca5a5; }
+  .parsed-json-box .json-bool  { color: #fde68a; }
+  .parsed-json-box .json-null  { color: #9ca3af; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge"><span class="dot"></span>TVBOX DEPENDENCY DOWNLOADER</div>
+    <h1>TVBox <span>线路解析下载工具</span></h1>
+    <p class="sub">解析 TVBox 接口配置，一键提取 jar/py/js/json 等依赖文件，生成批量下载脚本</p>
+  </header>
+
+  <div class="input-tabs" role="tablist">
+    <div class="input-tab active" data-input="url">🔗 接口 URL</div>
+    <div class="input-tab" data-input="json">📋 粘贴 JSON</div>
+    <div class="input-tab" data-input="file">📁 上传文件</div>
+    <div class="input-tab" data-input="editor">📝 配置编辑</div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <div class="input-pane active" id="pane-url">
+        <div class="panel-title">🔗 输入接口 URL</div>
+        <input type="url" id="urlInput" placeholder="https://example.com/tvbox.json">
+        <div style="margin-top: 10px; font-size: 12px; color: var(--text-dim);">
+          ⚠️ 由于浏览器跨域限制，URL 方式可能无法直接获取。如遇失败，请改用「粘贴 JSON」方式。
+        </div>
+      </div>
+
+      <div class="input-pane" id="pane-json" style="display:none;">
+        <div class="panel-title">📋 粘贴接口 JSON 内容</div>
+        <textarea id="jsonInput" placeholder="粘贴 TVBox 接口的完整 JSON 内容..."></textarea>
+      </div>
+
+      <div class="input-pane" id="pane-file" style="display:none;">
+        <div class="panel-title">📁 上传接口 JSON 文件</div>
+        <input type="file" id="fileInput" accept=".json,.txt" style="display:none">
+        <div class="dropzone" id="fileDropzone" style="border:1.5px dashed var(--border); border-radius:10px; padding:30px 12px; text-align:center; cursor:pointer; background:rgba(0,0,0,0.15);">
+          <div style="font-size:24px; margin-bottom:6px;">📁</div>
+          <div style="font-size:13px;">点击选择或拖拽 JSON 文件</div>
+        </div>
+        <div id="fileName" style="margin-top:8px; font-size:12px; color:var(--accent); display:none;"></div>
+      </div>
+
+      <div class="input-pane editor-pane" id="pane-editor" style="display:none;">
+        <div class="panel-title">📝 配置可视化编辑器</div>
+        <div class="editor-tabs">
+          <div class="editor-tab active" data-editor="basic">⚙️ 基本配置</div>
+          <div class="editor-tab" data-editor="sites">📺 站点</div>
+          <div class="editor-tab" data-editor="parses">🔗 解析</div>
+          <div class="editor-tab" data-editor="lives">📡 直播</div>
+          <div class="editor-tab" data-editor="rules">📋 规则</div>
+          <div class="editor-tab" data-editor="preview">📄 预览</div>
+        </div>
+        <div class="editor-section" id="editor-basic">
+          <div class="editor-grid">
+            <div class="editor-field"><label>Spider (JAR路径)</label><input type="text" id="edSpider" placeholder="./spider.jar"></div>
+            <div class="editor-field"><label>Wallpaper</label><input type="text" id="edWallpaper"></div>
+            <div class="editor-field"><label>Logo</label><input type="text" id="edLogo"></div>
+            <div class="editor-field"><label>Warning Text</label><input type="text" id="edWarning"></div>
+          </div>
+        </div>
+        <div class="editor-section" id="editor-sites" style="display:none;">
+          <div class="btn-row" style="margin-bottom:10px;">
+            <button class="btn success" id="btnAddSite" style="padding:6px 12px; font-size:12px;">➕ 添加站点</button>
+            <button class="btn secondary" id="btnClearSites" style="padding:6px 12px; font-size:12px;">🗑️ 清空</button>
+          </div>
+          <div class="editor-list" id="edSiteList"></div>
+        </div>
+        <div class="editor-section" id="editor-parses" style="display:none;">
+          <div class="btn-row" style="margin-bottom:10px;">
+            <button class="btn success" id="btnAddParse" style="padding:6px 12px; font-size:12px;">➕ 添加解析</button>
+            <button class="btn secondary" id="btnClearParses" style="padding:6px 12px; font-size:12px;">🗑️ 清空</button>
+          </div>
+          <div class="editor-list" id="edParseList"></div>
+        </div>
+        <div class="editor-section" id="editor-lives" style="display:none;">
+          <div class="btn-row" style="margin-bottom:10px;">
+            <button class="btn success" id="btnAddLive" style="padding:6px 12px; font-size:12px;">➕ 添加线路</button>
+            <button class="btn secondary" id="btnClearLives" style="padding:6px 12px; font-size:12px;">🗑️ 清空</button>
+          </div>
+          <div class="editor-list" id="edLiveList"></div>
+        </div>
+        <div class="editor-section" id="editor-rules" style="display:none;">
+          <div class="editor-field"><label>Hosts (JSON)</label><textarea id="edHosts" style="min-height:80px; font-size:12px;"></textarea></div>
+          <div class="editor-field"><label>Ads (逗号分隔)</label><input type="text" id="edAds"></div>
+          <div class="editor-field"><label>Sniffer</label><textarea id="edSniffer" style="min-height:60px; font-size:12px;"></textarea></div>
+        </div>
+        <div class="editor-section" id="editor-preview" style="display:none;">
+          <div class="editor-preview" id="edJsonPreview">{}</div>
+        </div>
+        <div class="btn-row" style="margin-top:12px; flex-wrap:wrap; gap:6px;">
+          <button class="btn primary" id="btnEdGenerate">🔧 生成 JSON</button>
+          <button class="btn secondary" id="btnEdImport">📥 粘贴导入</button>
+          <button class="btn secondary" id="btnEdImportUrl">🔗 URL 导入</button>
+          <button class="btn secondary" id="btnEdImportFile">📂 文件导入</button>
+          <input type="file" id="edFileInput" accept=".json,.txt" style="display:none;">
+          <button class="btn secondary" id="btnEdLoadSample">加载示例</button>
+          <button class="btn success" id="btnEdCopy">📋 复制</button>
+          <button class="btn info" id="btnEdDownload">💾 下载 JSON</button>
+          <button class="btn info" id="btnEdParseDown">📦 解析并下载</button>
+          <button class="btn danger" id="btnEdClear">🗑️ 清空</button>
+        </div>
+        <div class="status" id="statusEditor"></div>
+      </div>
+
+      <div class="btn-row" style="margin-top:12px; display:flex; gap:8px;">
+        <button class="btn primary" id="btnParse">🔍 解析依赖</button>
+        <button class="btn secondary" id="btnClearInput">清空</button>
+        <button class="btn info" id="btnSample">加载示例</button>
+      </div>
+      <div class="status" id="statusInput"></div>
+
+      <div class="parsed-json-wrap" id="parsedJsonWrap" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-size:13px; font-weight:600; color:var(--text);">📄 解析的接口配置</span>
+          <div style="display:flex; gap:6px;">
+            <button class="btn secondary" id="btnJsonCopy" style="padding:4px 10px; font-size:12px;">📋 复制</button>
+            <button class="btn primary" id="btnJsonDownloadTop" style="padding:4px 10px; font-size:12px;">💾 下载 JSON</button>
+          </div>
+        </div>
+        <div class="parsed-json-box" id="parsedJsonBox">
+          <pre id="parsedJsonPre"><code id="parsedJsonCode">{}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📦 解析结果</div>
+
+      <div class="stats-bar" id="statsBar" style="display:none; flex-wrap: wrap;">
+        <div class="stat-item"><span class="stat-num" id="statTotal">0</span><span class="stat-label">总文件</span></div>
+        <div class="stat-item"><span class="stat-num" id="statJar">0</span><span class="stat-label">JAR</span></div>
+        <div class="stat-item"><span class="stat-num" id="statPy">0</span><span class="stat-label">PY</span></div>
+        <div class="stat-item"><span class="stat-num" id="statJs">0</span><span class="stat-label">JS</span></div>
+        <div class="stat-item"><span class="stat-num" id="statJson">0</span><span class="stat-label">JSON</span></div>
+      </div>
+
+      <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
+        <label style="font-size: 12px; color: var(--text-dim); cursor: pointer;">
+          <input type="checkbox" id="chkSelectAll"> 全选
+        </label>
+        <span id="selectedCount" style="font-size: 12px; color: var(--text-dim); margin-left: auto;">已选择 0 个</span>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <button class="btn info" id="btnPackDownload" style="flex: 1; justify-content: center;">📦 一键打包下载</button>
+        <button class="btn info" id="btnDownloadJar" style="flex: 1; justify-content: center;">jar下载</button>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-info">
+          <span id="progressText">准备下载...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-log" id="progressLog"></div>
+      </div>
+
+      <div style="max-height: 300px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border);">
+        <table class="file-table" id="fileTable">
+          <thead><tr><th></th><th>文件名</th><th>类型</th><th>字段路径</th><th>URL</th></tr></thead>
+          <tbody id="fileList">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:40px;">请先解析接口配置</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="status" id="statusScript" style="margin-top: 12px;"></div>
+    </div>
+  </div>
+
+  <footer>TVBox线路解析下载工具 · 纯浏览器本地解析</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function(id) { return document.getElementById(id); };
+  var parsedFiles = [];
+  var selectedFiles = new Set();
+  var lastParsedJson = '';
+
+  document.querySelectorAll('.input-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.input-tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.input-pane').forEach(function (p) { p.style.display = 'none'; });
+      tab.classList.add('active');
+      var paneEl = $('pane-' + tab.getAttribute('data-input'));
+      if (paneEl) paneEl.style.display = 'block';
+    });
+  });
+
+  function showStatus(id, type, msg) {
+    var el = $(id);
+    el.className = "status show " + type;
+    el.textContent = msg;
+  }
+  function clearStatus(id) {
+    $(id).className = "status";
+    $(id).textContent = "";
+  }
+
+  function tryDecodeImage(bytes) {
+    try {
+      var bin = '';
+      var chunk = 0x8000;
+      for (var i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      var lastIndex = bin.lastIndexOf('**');
+      if (lastIndex !== -1) bin = bin.slice(lastIndex + 2);
+      var clean = bin.replace(/\s+/g, '');
+      var decoded = atob(clean);
+      var out = '';
+      for (var j = 0; j < decoded.length; j++) out += String.fromCharCode(decoded.charCodeAt(j));
+      return out;
+    } catch (e) { return null; }
+  }
+
+  function convertToString(hex) {
+    return CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Hex.parse(hex));
+  }
+
+  function tryDecryptAes(input) {
+    if (!input || typeof input !== 'string') return null;
+    try {
+      var markerStartHex = CryptoJS.enc.Utf8.parse("$#").toString();
+      var markerEndHex = CryptoJS.enc.Utf8.parse("#$").toString();
+      var endPos = input.indexOf(markerEndHex);
+      if (endPos === -1) return null;
+      var chars = input.split("");
+      var keySegment = chars.splice(0, endPos + markerEndHex.length).join("");
+      var ivHex = chars.splice(chars.length - 26, 26).join("");
+      var ciphertext = chars.join("");
+      var keyHex = keySegment.substring(markerStartHex.length, keySegment.length - markerEndHex.length);
+      var key = convertToString(keyHex);
+      var iv = convertToString(ivHex);
+      var keyWA = CryptoJS.enc.Utf8.parse(key.padEnd(16, "0"));
+      var ivWA = CryptoJS.enc.Utf8.parse(iv.padEnd(16, "0"));
+      var cipherParams = CryptoJS.lib.CipherParams.create({
+        ciphertext: CryptoJS.enc.Hex.parse(ciphertext)
+      });
+      var decrypted = CryptoJS.AES.decrypt(cipherParams, keyWA, {
+        iv: ivWA, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
+      });
+      return CryptoJS.enc.Utf8.stringify(decrypted);
+    } catch (e) { return null; }
+  }
+
+  function tryDecodeBase64(str) { try { return atob(str.trim()); } catch (e) { return null; } }
+  function tryDecodeBase64Url(str) {
+    try {
+      var fixed = str.trim().replace(/-/g, '+').replace(/_/g, '/');
+      while (fixed.length % 4 !== 0) fixed += '=';
+      return atob(fixed);
+    } catch (e) { return null; }
+  }
+
+  function decryptConfig(str) {
+    if (!str || typeof str !== 'string') return null;
+    var s = str.trim();
+    var r = tryDecryptAes(s);
+    if (r) { try { JSON.parse(r); return r; } catch(e){} }
+    r = tryDecodeBase64(s);
+    if (r) { try { JSON.parse(r); return r; } catch(e){} }
+    r = tryDecodeBase64Url(s);
+    if (r) { try { JSON.parse(r); return r; } catch(e){} }
+    return null;
+  }
+
+  function cleanJsonComments(str) {
+    if (!str || typeof str !== 'string') return str;
+    return str.replace(/\/\/[^\n\r]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  }
+
+  function extractJsonFromText(str) {
+    if (!str || typeof str !== 'string') return null;
+    var patterns = [/\{[\s\S]*\}/, /\[[\s\S]*\]/];
+    for (var i = 0; i < patterns.length; i++) {
+      var matches = str.match(patterns[i]);
+      if (matches) {
+        for (var j = 0; j < matches.length; j++) {
+          try { JSON.parse(matches[j]); return matches[j]; } catch (e) {}
+        }
+      }
+    }
+    return null;
+  }
+
+  function isValidUrl(str) { return /^https?:\/\//i.test(str); }
+
+  function resolveUrl(url, baseUrl) {
+    if (!url || typeof url !== 'string') return url;
+    if (isValidUrl(url)) return url;
+    if (!baseUrl) return url;
+    if (url.startsWith('./')) {
+      var base = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+      return base + url.substring(2);
+    }
+    if (url.startsWith('/')) {
+      var origin = baseUrl.match(/^(https?:\/\/[^\/]+)/);
+      return origin ? origin[1] + url : url;
+    }
+    return url;
+  }
+
+  function getFileName(url) {
+    try {
+      var path = url.split('?')[0];
+      return path.substring(path.lastIndexOf('/') + 1) || 'unknown';
+    } catch (e) { return 'unknown'; }
+  }
+
+  function deepResolveConfig(obj, baseUrl) {
+    if (typeof obj === 'string') return resolveUrl(obj, baseUrl);
+    if (Array.isArray(obj)) return obj.map(function(item) { return deepResolveConfig(item, baseUrl); });
+    if (obj && typeof obj === 'object') {
+      var result = {};
+      Object.keys(obj).forEach(function(key) { result[key] = deepResolveConfig(obj[key], baseUrl); });
+      return result;
+    }
+    return obj;
+  }
+
+  function parseConfig(config, baseUrl) {
+    var files = [];
+    var seen = new Set();
+
+    function getFileTypeEnhanced(url) {
+      var clean = url.split('?')[0].split('#')[0];
+      var ext = clean.split('.').pop().toLowerCase();
+      if (ext === 'jar') return 'jar';
+      if (ext === 'py') return 'py';
+      if (ext === 'js') return 'js';
+      if (ext === 'json') return 'json';
+      if (['txt','m3u','m3u8'].indexOf(ext) >= 0) return 'txt';
+      if (['png','jpg','jpeg','gif','webp'].indexOf(ext) >= 0) return 'img';
+      return null;
+    }
+
+    function addFile(rawUrl, path, forcedType) {
+      if (!rawUrl || typeof rawUrl !== 'string') return;
+      var parts = rawUrl.split('$$');
+      for (var p = 0; p < parts.length; p++) {
+        var part = parts[p].trim();
+        if (!part) continue;
+        var url = resolveUrl(part, baseUrl);
+        if (!isValidUrl(url) || seen.has(url)) continue;
+        var type = forcedType || getFileTypeEnhanced(url);
+        if (!type) continue;
+        seen.add(url);
+        files.push({ url: url, name: getFileName(url), type: type, path: path });
+      }
+    }
+
+    function walkAndCollect(obj, path) {
+      if (!obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj)) {
+        obj.forEach(function(item, i) { walkAndCollect(item, path + '[' + i + ']'); });
+        return;
+      }
+      Object.keys(obj).forEach(function(k) {
+        if (k === 'name' || k === 'key') return;
+        var v = obj[k];
+        var newPath = path + '.' + k;
+        if (typeof v === 'string') {
+          addFile(v, newPath, k === 'spider' ? 'jar' : null);
+        } else if (typeof v === 'object' && v !== null) {
+          walkAndCollect(v, newPath);
+        }
+      });
+    }
+
+    walkAndCollect(config, 'root');
+    return files;
+  }
+
+  $('btnParse').addEventListener('click', async function () {
+    clearStatus('statusInput');
+    parsedFiles = [];
+    selectedFiles.clear();
+
+    var jsonText = '';
+    var baseUrl = '';
+    var activeTab = document.querySelector('.input-tab.active').getAttribute('data-input');
+
+    try {
+      if (activeTab === 'url') {
+        var url = $('urlInput').value.trim();
+        if (!url) { showStatus('statusInput', 'warn', '请输入接口 URL'); return; }
+        baseUrl = url;
+        showStatus('statusInput', 'info', '正在获取接口内容...');
+        var resp = await fetch(url, { method: 'GET', redirect: 'follow' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        jsonText = await resp.text();
+      } else if (activeTab === 'json') {
+        jsonText = $('jsonInput').value.trim();
+        if (!jsonText) { showStatus('statusInput', 'warn', '请粘贴 JSON 内容'); return; }
+      } else if (activeTab === 'file') {
+        var file = $('fileInput').files[0];
+        if (!file) { showStatus('statusInput', 'warn', '请选择文件'); return; }
+        jsonText = await file.text();
+      }
+
+      var config = null;
+      try { config = JSON.parse(jsonText); } catch (e) {
+        var decrypted = decryptConfig(jsonText);
+        if (decrypted) try { config = JSON.parse(decrypted); } catch(e2){}
+        if (!config) {
+          var cleaned = cleanJsonComments(jsonText);
+          if (cleaned !== jsonText) try { config = JSON.parse(cleaned); } catch(e2) {}
+        }
+        if (!config) {
+          var extracted = extractJsonFromText(jsonText);
+          if (extracted) try { config = JSON.parse(extracted); } catch(e2) {}
+        }
+      }
+
+      if (!config) {
+        showStatus('statusInput', 'err', '无法解析 JSON 内容，请检查或复制原接口文本');
+        return;
+      }
+
+      parsedFiles = parseConfig(config, baseUrl);
+      var displayConfig = deepResolveConfig(config, baseUrl);
+      lastParsedJson = JSON.stringify(displayConfig, null, 2);
+      $('parsedJsonCode').textContent = lastParsedJson;
+      $('parsedJsonWrap').style.display = 'block';
+      $('parsedJsonBox').classList.remove('collapsed');
+
+      parsedFiles.forEach(function (_, i) { selectedFiles.add(i); });
+      showStatus('statusInput', 'ok', '解析成功，共找到 ' + parsedFiles.length + ' 个依赖文件');
+      renderFileList();
+      updateStats();
+    } catch (e) {
+      showStatus('statusInput', 'err', '解析失败: ' + e.message);
+    }
+  });
+
+  function renderFileList() {
+    var tbody = $('fileList');
+    if (parsedFiles.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:40px;">请先解析接口配置</td></tr>';
+      $('statsBar').style.display = 'none';
+      return;
+    }
+
+    $('statsBar').style.display = 'flex';
+    tbody.innerHTML = parsedFiles.map(function (f, i) {
+      var checked = selectedFiles.has(i) ? 'checked' : '';
+      return '<tr>' +
+        '<td><input type="checkbox" class="chk file-chk" data-idx="' + i + '" ' + checked + '></td>' +
+        '<td><div class="file-name">' + f.name + '</div></td>' +
+        '<td><span class="file-type type-' + f.type + '">' + f.type.toUpperCase() + '</span></td>' +
+        '<td><div class="file-path">' + f.path + '</div></td>' +
+        '<td><div class="file-url">' + f.url.substring(0, 40) + '...</div></td>' +
+        '</tr>';
+    }).join('');
+
+    tbody.querySelectorAll('.file-chk').forEach(function (chk) {
+      chk.addEventListener('change', function () {
+        var idx = parseInt(this.getAttribute('data-idx'));
+        if (this.checked) selectedFiles.add(idx);
+        else selectedFiles.delete(idx);
+        updateSelectedCount();
+      });
+    });
+    updateSelectedCount();
+  }
+
+  function updateStats() {
+    ['jar','py','js','json'].forEach(function (t) {
+      var count = parsedFiles.filter(function (f) { return f.type === t; }).length;
+      var el = $('stat' + t.charAt(0).toUpperCase() + t.slice(1));
+      if (el) el.textContent = count;
+    });
+    $('statTotal').textContent = parsedFiles.length;
+  }
+
+  function updateSelectedCount() {
+    $('selectedCount').textContent = '已选择 ' + selectedFiles.size + ' 个';
+    $('chkSelectAll').checked = selectedFiles.size === parsedFiles.length && parsedFiles.length > 0;
+  }
+
+  $('chkSelectAll').addEventListener('change', function () {
+    if (this.checked) parsedFiles.forEach(function (_, i) { selectedFiles.add(i); });
+    else selectedFiles.clear();
+    renderFileList();
+  });
+
+  $('btnClearInput').addEventListener('click', function () {
+    $('urlInput').value = '';
+    $('jsonInput').value = '';
+    clearStatus('statusInput');
+    parsedFiles = [];
+    selectedFiles.clear();
+    renderFileList();
+    $('parsedJsonWrap').style.display = 'none';
+  });
+
+  $('btnSample').addEventListener('click', function () {
+    var sample = {
+      "spider": "https://example.com/spider.jar",
+      "sites": [{ "key": "douban", "name": "豆瓣", "type": 3, "api": "csp_DouBan", "ext": "https://example.com/douban.py" }]
+    };
+    $('jsonInput').value = JSON.stringify(sample, null, 2);
+    document.querySelector('.input-tab[data-input="json"]').click();
+  });
+})();
+</script>
+</body>
+</html>
