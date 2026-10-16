@@ -3,26 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>烤烟分级 - 快速取色</title>
+<title>烤烟分级 - 自动锁边全局色温</title>
 <style>
   body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
   #previewBox { position: relative; width: 100vw; height: 100vh; }
   video { width: 100%; height: 100%; object-fit: cover; }
-  canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  #overlay { z-index: 5; }
-  #hidden { display: none; }
   #info {
     position: absolute; top: 15px; left: 0; width: 100%; text-align: center;
-    background: rgba(0,0,0,0.7); padding: 10px 0; font-size: 15px; z-index: 10;
+    background: rgba(0,0,0,0.6); padding: 10px 0; font-size: 16px; z-index: 10;
   }
-  #hint {
-    position: absolute; bottom: 80px; left: 0; width: 100%; text-align: center;
-    font-size: 13px; color: #aaa; z-index: 10;
-  }
+  canvas { display: none; }
+  #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
   button {
-    position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
-    padding: 12px 32px; background: #00aa00; color: #fff; border: none;
-    border-radius: 25px; font-size: 16px; z-index: 10;
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    padding: 14px 40px; background: #00aa00; color: #fff; border: none;
+    border-radius: 30px; font-size: 18px; z-index: 20;
   }
 </style>
 </head>
@@ -30,26 +25,87 @@
 <div id="previewBox">
   <video id="video" autoplay playsinline></video>
   <canvas id="overlay"></canvas>
-  <canvas id="hidden"></canvas>
-  <div id="info">点击"打开摄像头"，然后用手指圈出烟叶区域</div>
-  <div id="hint">操作：在画面上拖动手指圈选烟叶 → 松手自动分析</div>
+  <div id="info">初始化中...</div>
   <button id="btn">打开摄像头</button>
+  <canvas id="hidden"></canvas>
 </div>
 <script>
 const btn = document.getElementById('btn');
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
-const hidden = document.getElementById('hidden');
 const octx = overlay.getContext('2d');
-const hctx = hidden.getContext('2d');
+const hidden = document.getElementById('hidden');
+const hctx = hidden.getContext('2d', { willReadFrequently: true });
 const info = document.getElementById('info');
 
-let drawing = false;
-let points = [];
+let stream = null;
+let analyzing = false;
+
+// RGB转开尔文色温
+function rgbToKelvin(r, g, b) {
+  let x = (-0.14282 * r) + (1.54924 * g) + (-0.95641 * b);
+  let y = (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+  let z = (-0.68202 * r) + (0.77073 * g) + (0.56332 * b);
+  let xc = x / (x + y + z);
+  let yc = y / (x + y + z);
+  let n = (xc - 0.3320) / (0.1858 - yc);
+  let k = 437 * Math.pow(n, 3) + 3601 * Math.pow(n, 2) + 6861 * n + 5517;
+  return Math.round(k);
+}
+
+// 简易形态学：连通域查找
+function findLargestCC(mask, w, h) {
+  const visited = new Uint8Array(w * h);
+  let maxSize = 0;
+  let maxLabel = -1;
+  let label = 0;
+  const dx = [1, -1, 0, 0];
+  const dy = [0, 0, 1, -1];
+  
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      if (mask[idx] && !visited[idx]) {
+        label++;
+        let size = 0;
+        const stack = [[x, y]];
+        while (stack.length) {
+          const [cx, cy] = stack.pop();
+          const ci = cy * w + cx;
+          if (cx < 0 || cy < 0 || cx >= w || cy >= h || visited[ci] || !mask[ci]) continue;
+          visited[ci] = label;
+          size++;
+          for (let i = 0; i < 4; i++) stack.push([cx + dx[i], cy + dy[i]]);
+        }
+        if (size > maxSize) { maxSize = size; maxLabel = label; }
+      }
+    }
+  }
+  
+  const result = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) if (visited[i] === maxLabel) result[i] = 255;
+  return result;
+}
+
+// 形态学腐蚀
+function erode(mask, w, h, iter=3) {
+  let m = mask.slice();
+  for (let it = 0; it < iter; it++) {
+    const nm = new Uint8Array(w * h);
+    for (let y = 1; y < h-1; y++) {
+      for (let x = 1; x < w-1; x++) {
+        const i = y * w + x;
+        if (m[i] && m[i-1] && m[i+1] && m[i-w] && m[i+w]) nm[i] = 255;
+      }
+    }
+    m = nm;
+  }
+  return m;
+}
 
 async function startCam() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     video.srcObject = stream;
     btn.style.display = 'none';
     video.onloadedmetadata = () => {
@@ -57,97 +113,115 @@ async function startCam() {
       overlay.height = video.videoHeight;
       hidden.width = video.videoWidth;
       hidden.height = video.videoHeight;
+      setInterval(autoAnalyze, 2000); // 每2秒自动识别
     };
   } catch (e) {
     info.innerText = '打开失败：' + e.message;
   }
 }
 
-overlay.addEventListener('pointerdown', e => {
-  drawing = true;
-  points = [{ x: e.offsetX, y: e.offsetY }];
-  octx.clearRect(0, 0, overlay.width, overlay.height);
-  octx.beginPath();
-  octx.moveTo(e.offsetX, e.offsetY);
-});
-
-overlay.addEventListener('pointermove', e => {
-  if (!drawing) return;
-  points.push({ x: e.offsetX, y: e.offsetY });
-  octx.strokeStyle = '#00ff00';
-  octx.lineWidth = 2;
-  octx.lineTo(e.offsetX, e.offsetY);
-  octx.stroke();
-});
-
-overlay.addEventListener('pointerup', () => {
-  if (!drawing) return;
-  drawing = false;
-  analyzeRegion();
-});
-
-function analyzeRegion() {
-  if (points.length < 5) { info.innerText = '圈太小，重新圈'; return; }
-
-  hctx.drawImage(video, 0, 0, hidden.width, hidden.height);
-  const imgData = hctx.getImageData(0, 0, hidden.width, hidden.height);
-  const data = imgData.data;
-
-  const minX = Math.min(...points.map(p => p.x));
-  const maxX = Math.max(...points.map(p => p.x));
-  const minY = Math.min(...points.map(p => p.y));
-  const maxY = Math.max(...points.map(p => p.y));
-
-  let r=0, g=0, b=0, count=0;
-
-  for (let y = minY; y <= maxY; y++) {
-    for (let x = minX; x <= maxX; x++) {
-      if (pointInPolygon(x, y, points)) {
-        const idx = (Math.floor(y) * hidden.width + Math.floor(x)) * 4;
-        r += data[idx];
-        g += data[idx+1];
-        b += data[idx+2];
-        count++;
+function autoAnalyze() {
+  if (analyzing || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  analyzing = true;
+  info.innerText = '正在自动锁边...';
+  
+  setTimeout(() => {
+    try {
+      hctx.drawImage(video, 0, 0, hidden.width, hidden.height);
+      const imgData = hctx.getImageData(0, 0, hidden.width, hidden.height);
+      const data = imgData.data;
+      const w = hidden.width, h = hidden.height;
+      
+      // HSV空间提取暖色（烟叶）
+      const mask = new Uint8Array(w * h);
+      let rSum=0, gSum=0, bSum=0, count=0;
+      
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const r = data[i], g = data[i+1], b = data[i+2];
+          const max = Math.max(r,g,b), min = Math.min(r,g,b);
+          const v = max / 255, s = max ? (max-min)/max : 0;
+          
+          let hue = 0;
+          if (max !== min) {
+            if (max === r) hue = ((g-b)/(max-min) + 6) % 6;
+            else if (max === g) hue = (b-r)/(max-min) + 2;
+            else hue = (r-g)/(max-min) + 4;
+            hue *= 60;
+          }
+          
+          // 暖色：橘黄/红棕 (12°-75°)，排除冷色背景
+          if (hue >= 12 && hue <= 75 && s > 0.25 && v > 0.25 && v < 0.95) {
+            mask[y*w+x] = 255;
+          }
+          
+          // 全局平均（用于全局色温）
+          rSum += r; gSum += g; bSum += b; count++;
+        }
       }
+      
+      // 找最大连通域（烟叶主体）
+      const cc = findLargestCC(mask, w, h);
+      const eroded = erode(cc, w, h, 3); // 向内锁边
+      
+      // 绘制锁边轮廓
+      octx.clearRect(0, 0, overlay.width, overlay.height);
+      octx.strokeStyle = '#00ff00';
+      octx.lineWidth = 3;
+      octx.beginPath();
+      
+      let leafR=0, leafG=0, leafB=0, leafCount=0;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          if (eroded[y*w+x]) {
+            leafR += data[i]; leafG += data[i+1]; leafB += data[i+2]; leafCount++;
+            // 边缘检测（简单梯度）
+            if (y>0 && x>0 && !eroded[(y-1)*w+x] || !eroded[y*w+(x-1)]) {
+              octx.lineTo(x, y);
+            }
+          }
+        }
+      }
+      octx.stroke();
+      
+      // 色分类统计（锁边内）
+      let redBrown=0, orange=0, dark=0, other=0;
+      if (leafCount > 0) {
+        leafR = Math.round(leafR/leafCount);
+        leafG = Math.round(leafG/leafCount);
+        leafB = Math.round(leafB/leafCount);
+        
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            if (eroded[y*w+x]) {
+              const i = (y * w + x) * 4;
+              const r = data[i], g = data[i+1], b = data[i+2];
+              const max = Math.max(r,g,b);
+              if (r > g && r > b && r > 150) redBrown++;
+              else if (g > r*0.9 && g > b && g > 120) orange++;
+              else if (max < 100) dark++;
+              else other++;
+            }
+          }
+        }
+      }
+      
+      const totalLeaf = redBrown+orange+dark+other || 1;
+      const globalR = Math.round(rSum/count), globalG = Math.round(gSum/count), globalB = Math.round(bSum/count);
+      const globalK = rgbToKelvin(globalR, globalG, globalB);
+      const leafK = leafCount ? rgbToKelvin(leafR, leafG, leafB) : 0;
+      
+      info.innerHTML = `全局色温:${globalK}K | 锁边内色温:${leafK}K<br>
+        RGB(${leafR},${leafG},${leafB}) | 像素:${leafCount}<br>
+        红棕:${((redBrown/totalLeaf)*100).toFixed(1)}% 橘黄:${((orange/totalLeaf)*100).toFixed(1)}% 暗褐:${((dark/totalLeaf)*100).toFixed(1)}%`;
+      
+    } catch(e) {
+      info.innerText = '识别异常：' + e.message;
     }
-  }
-
-  if (count === 0) { info.innerText = '圈内无像素'; return; }
-
-  r = Math.round(r/count);
-  g = Math.round(g/count);
-  b = Math.round(b/count);
-
-  const max = Math.max(r,g,b), min = Math.min(r,g,b);
-  let category = '';
-
-  if (r > g && r > b && r > 150) category = '红棕/深橘';
-  else if (g > r * 0.9 && g > b && g > 120) category = '橘黄/正黄';
-  else if (max < 100) category = '暗褐/焦枯';
-  else if (b > r && b > g) category = '杂色(偏蓝)';
-  else if (max - min < 30) category = '灰杂/褪色';
-  else category = '其他';
-
-  info.innerText = `圈内 ${count} 像素 | 平均 RGB(${r},${g},${b}) | 主色:${category}`;
-
-  octx.strokeStyle = '#ffff00';
-  octx.lineWidth = 3;
-  octx.beginPath();
-  octx.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) octx.lineTo(points[i].x, points[i].y);
-  octx.closePath();
-  octx.stroke();
-}
-
-function pointInPolygon(x, y, poly) {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    if (((poly[i].y > y) !== (poly[j].y > y)) &&
-        (x < (poly[j].x - poly[i].x) * (y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)) {
-      inside = !inside;
-    }
-  }
-  return inside;
+    analyzing = false;
+  }, 100);
 }
 
 btn.onclick = startCam;
