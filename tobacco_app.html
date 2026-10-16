@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>烤烟分级</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    overflow: hidden;
+  }
+  #wrap {
+    position: relative;
+    width: 100%; height: 100%;
+  }
+  video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  #msg {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 14px;
+    color: #fff; background: rgba(0,0,0,.55);
+    font-size: 15px; text-align: center;
+    z-index: 10;
+  }
+  #bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 18px;
+    display: flex; justify-content: center;
+    z-index: 10;
+  }
+  #startBtn {
+    padding: 14px 36px;
+    font-size: 17px;
+    color: #fff; background: #2e9e5b;
+    border: none; border-radius: 30px;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="msg">点下方按钮打开摄像头</div>
+  <video id="video" playsinline autoplay muted></video>
+  <div id="bottom">
+    <button id="startBtn">打开摄像头</button>
+  </div>
+</div>
+
+<script>
+const msg = document.getElementById('msg');
+const video = document.getElementById('video');
+const startBtn = document.getElementById('startBtn');
+let stream = null;
+
+function log(t) {
+  msg.textContent = t;
+  console.log(t);
+}
+
+startBtn.addEventListener('click', startCam);
+
+async function startCam() {
+  // 摄像头约束：优先后置摄像头
+  const constraints = {
+    video: {
+      facingMode: { ideal: 'environment' },
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    },
+    audio: false
+  };
+
+  try {
+    log('正在请求摄像头权限...');
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+
+    // 等视频真正开始播放
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        video.play().then(resolve).catch(reject);
+      };
+      video.onerror = reject;
+    });
+
+    startBtn.style.display = 'none';
+    log('摄像头已打开，实时预览中');
+  } catch (err) {
+    log('打开失败：' + err.message);
+    console.error(err);
+  }
+}
+
+// 页面关闭时释放摄像头
+window.addEventListener('beforeunload', () => {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+});
+</script>
+</body>
+</html>
