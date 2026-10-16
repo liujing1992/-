@@ -1,104 +1,88 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>烤烟分级</title>
+<title>烤烟分级 - 色温检测</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%; height: 100%;
-    background: #000;
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-    overflow: hidden;
+  body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+  #previewBox { position: relative; width: 100vw; height: 100vh; }
+  video { width: 100%; height: 100%; object-fit: cover; }
+  /* 中心取色框 */
+  #focusBox {
+    position: absolute; top: 50%; left: 50%; width: 80px; height: 80px;
+    transform: translate(-50%, -50%); border: 2px solid #00ff00;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.3); pointer-events: none;
   }
-  #wrap {
-    position: relative;
-    width: 100%; height: 100%;
+  #info {
+    position: absolute; top: 15px; left: 0; width: 100%; text-align: center;
+    background: rgba(0,0,0,0.6); padding: 10px 0; font-size: 16px; z-index: 10;
   }
-  video {
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  #msg {
-    position: absolute; top: 0; left: 0; right: 0;
-    padding: 14px;
-    color: #fff; background: rgba(0,0,0,.55);
-    font-size: 15px; text-align: center;
-    z-index: 10;
-  }
-  #bottom {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 18px;
-    display: flex; justify-content: center;
-    z-index: 10;
-  }
-  #startBtn {
-    padding: 14px 36px;
-    font-size: 17px;
-    color: #fff; background: #2e9e5b;
-    border: none; border-radius: 30px;
+  canvas { display: none; }
+  button {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    padding: 14px 40px; background: #00aa00; color: #fff; border: none;
+    border-radius: 30px; font-size: 18px; z-index: 10;
   }
 </style>
 </head>
 <body>
-<div id="wrap">
-  <div id="msg">点下方按钮打开摄像头</div>
-  <video id="video" playsinline autoplay muted></video>
-  <div id="bottom">
-    <button id="startBtn">打开摄像头</button>
-  </div>
+<div id="previewBox">
+  <video id="video" autoplay playsinline></video>
+  <div id="focusBox"></div>
+  <div id="info">初始化中...</div>
+  <button id="btn">打开摄像头</button>
+  <canvas id="canvas"></canvas>
 </div>
-
 <script>
-const msg = document.getElementById('msg');
+const btn = document.getElementById('btn');
 const video = document.getElementById('video');
-const startBtn = document.getElementById('startBtn');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
 let stream = null;
 
-function log(t) {
-  msg.textContent = t;
-  console.log(t);
+// RGB 转开尔文色温（近似算法）
+function rgbToKelvin(r, g, b) {
+  let x = (-0.14282 * r) + (1.54924 * g) + (-0.95641 * b);
+  let y = (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+  let z = (-0.68202 * r) + (0.77073 * g) + (0.56332 * b);
+  let xc = x / (x + y + z);
+  let yc = y / (x + y + z);
+  let n = (xc - 0.3320) / (0.1858 - yc);
+  let k = 437 * Math.pow(n, 3) + 3601 * Math.pow(n, 2) + 6861 * n + 5517;
+  return Math.round(k);
 }
 
-startBtn.addEventListener('click', startCam);
-
 async function startCam() {
-  // 摄像头约束：优先后置摄像头
-  const constraints = {
-    video: {
-      facingMode: { ideal: 'environment' },
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    },
-    audio: false
-  };
-
   try {
-    log('正在请求摄像头权限...');
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     video.srcObject = stream;
-
-    // 等视频真正开始播放
-    await new Promise((resolve, reject) => {
-      video.onloadedmetadata = () => {
-        video.play().then(resolve).catch(reject);
-      };
-      video.onerror = reject;
-    });
-
-    startBtn.style.display = 'none';
-    log('摄像头已打开，实时预览中');
-  } catch (err) {
-    log('打开失败：' + err.message);
-    console.error(err);
+    btn.style.display = 'none';
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    setInterval(checkColor, 1000); // 每秒测一次
+  } catch (e) {
+    info.innerText = '打开失败：' + e.message;
   }
 }
 
-// 页面关闭时释放摄像头
-window.addEventListener('beforeunload', () => {
-  if (stream) stream.getTracks().forEach(t => t.stop());
-});
+function checkColor() {
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // 取中心 80x80 区域平均色
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  const size = 80;
+  const data = ctx.getImageData(cx - size/2, cy - size/2, size, size).data;
+  let r=0, g=0, b=0, count=0;
+  for (let i=0; i<data.length; i+=4) {
+    r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+  }
+  r = Math.round(r/count); g = Math.round(g/count); b = Math.round(b/count);
+  const k = rgbToKelvin(r, g, b);
+  info.innerText = `中心色温：约 ${k}K | RGB(${r},${g},${b})`;
+}
+btn.onclick = startCam;
 </script>
 </body>
 </html>
