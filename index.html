@@ -16,6 +16,9 @@
     --accent: #00d4ff;
     --accent-2: #8b5cf6;
     --accent-glow: rgba(0, 212, 255, 0.2);
+    --ok: #22e08a;
+    --warn: #ffb547;
+    --err: #ff5d6c;
     --radius: 16px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,119 +33,130 @@
     padding: 50px 20px 20px;
     line-height: 1.6;
   }
-  .container {
-    max-width: 800px;
-    margin: 0 auto;
-    width: 100%;
-  }
-  header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
+  .container { max-width: 800px; margin: 0 auto; width: 100%; }
+  header { text-align: center; margin-bottom: 40px; }
   .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 14px;
-    border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 14px; border-radius: 999px;
     border: 1px solid var(--border-active);
     background: rgba(0, 212, 255, 0.08);
-    font-size: 12px;
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 12px;
+    font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 12px;
   }
   .badge .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 8px var(--accent);
   }
-  h1 {
-    font-size: 32px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    letter-spacing: -0.5px;
-  }
-  h1 span {
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  p.subtitle {
-    color: var(--text-dim);
-    font-size: 14px;
-  }
+  h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p.subtitle { color: var(--text-dim); font-size: 14px; }
+
   .tools-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px; margin-bottom: 40px;
   }
   .tool-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    text-decoration: none;
-    color: inherit;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; text-decoration: none; color: inherit;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    backdrop-filter: blur(10px);
+    display: flex; flex-direction: column; justify-content: space-between;
+    backdrop-filter: blur(10px); cursor: pointer;
   }
   .tool-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--border-active);
-    box-shadow: 0 10px 30px var(--accent-glow);
-    background: var(--bg-hover);
+    transform: translateY(-4px); border-color: var(--border-active);
+    box-shadow: 0 10px 30px var(--accent-glow); background: var(--bg-hover);
   }
-  .card-icon {
-    font-size: 36px;
-    margin-bottom: 16px;
+  .tool-card.locked { opacity: .55; cursor: not-allowed; }
+  .tool-card.locked:hover { transform: none; border-color: var(--border);
+    box-shadow: none; background: var(--bg-panel); }
+  .card-icon { font-size: 36px; margin-bottom: 16px; }
+  .card-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px; }
+  .tag {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid currentColor; letter-spacing: .5px;
   }
-  .card-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 8px;
-  }
-  .card-desc {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.5;
-    margin-bottom: 24px;
-    flex-grow: 1;
-  }
+  .tag.ok { color: var(--ok); }
+  .tag.warn { color: var(--warn); }
+  .tag.err { color: var(--err); }
+  .tag.idle { color: var(--text-dim); }
+  .card-desc { font-size: 13px; color: var(--text-dim); line-height: 1.5;
+    margin-bottom: 24px; flex-grow: 1; }
   .card-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
   }
-  .card-action svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transition: transform 0.2s;
+  .card-action svg { width: 16px; height: 16px; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+  .tool-card:hover .card-action svg { transform: translateX(4px); }
+  .tool-card.locked:hover .card-action svg { transform: none; }
+
+  /* SD 探测弹窗 */
+  #sdDialog {
+    position: fixed; inset: 0; z-index: 99; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(4, 6, 16, 0.72); backdrop-filter: blur(8px);
+    padding: 20px;
   }
-  .tool-card:hover .card-action svg {
-    transform: translateX(4px);
+  #sdDialog.show { display: flex; }
+  .dlg {
+    width: 100%; max-width: 420px; border-radius: 20px; overflow: hidden;
+    background: linear-gradient(160deg, rgba(22,28,58,.96), rgba(12,16,36,.96));
+    border: 1px solid var(--border-active);
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 30px var(--accent-glow);
   }
+  .dlg-head { padding: 22px 22px 14px; text-align: center; }
+  .dlg-head .spinner {
+    width: 42px; height: 42px; margin: 0 auto 14px; border-radius: 50%;
+    border: 3px solid rgba(0,212,255,.2); border-top-color: var(--accent);
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .dlg-head h3 { font-size: 19px; color: #fff; margin-bottom: 6px; }
+  .dlg-head p { font-size: 13px; color: var(--text-dim); }
+  .dlg-body { padding: 6px 22px 20px; }
+  .node {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 12px; margin-bottom: 10px;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(100,130,255,.1);
+  }
+  .node .pulse {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    background: var(--text-dim); box-shadow: 0 0 8px currentColor;
+  }
+  .node.checking .pulse { background: var(--accent); animation: blink 1s infinite; }
+  .node.ok .pulse { background: var(--ok); }
+  .node.bad .pulse { background: var(--err); }
+  @keyframes blink { 50% { opacity: .25; } }
+  .node .meta { flex-grow: 1; }
+  .node .meta b { display: block; font-size: 14px; color: #fff; }
+  .node .meta span { font-size: 12px; }
+  .node.ok .meta span { color: var(--ok); }
+  .node.bad .meta span { color: var(--err); }
+  .node.checking .meta span { color: var(--accent); }
+
+  .dlg-tip {
+    font-size: 12.5px; color: var(--warn); text-align: center;
+    padding: 10px 14px; margin: 0 22px 20px; border-radius: 12px;
+    background: rgba(255,181,71,.08); border: 1px solid rgba(255,181,71,.25);
+    display: none; line-height: 1.55;
+  }
+  .dlg-tip.show { display: block; }
+  .dlg-btns { display: flex; gap: 10px; padding: 0 22px 22px; }
+  .dlg-btns button {
+    flex: 1; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700;
+    border: 1px solid var(--border-active); background: rgba(0,212,255,.1);
+    color: var(--accent); cursor: pointer; transition: .15s;
+  }
+  .dlg-btns button:active { transform: scale(.97); }
+  .dlg-btns button.primary { background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: #04121c; border: none; }
+  .dlg-btns button:disabled { opacity: .35; cursor: not-allowed; }
+  .dlg-btns button.ghost { background: transparent; color: var(--text-dim);
+    border-color: rgba(100,130,255,.2); }
   footer {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-dim);
-    padding-top: 20px;
-    border-top: 1px solid rgba(100, 130, 255, 0.08);
+    text-align: center; font-size: 12px; color: var(--text-dim);
+    padding-top: 20px; border-top: 1px solid rgba(100, 130, 255, 0.08);
   }
 </style>
 </head>
@@ -168,7 +182,7 @@
         </div>
       </a>
 
-      <!-- 工具 2 (按实际文件名修改 href) -->
+      <!-- 工具 2 -->
       <a href="./状态互查2.0.html" class="tool-card">
         <div>
           <div class="card-icon">📊</div>
@@ -180,11 +194,214 @@
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
       </a>
+
+      <!-- ★ SD WebUI 入口 -->
+      <div class="tool-card" id="sdCard">
+        <div>
+          <div class="card-icon">🎨</div>
+          <div class="card-title">
+            Stable Diffusion
+            <span class="tag idle" id="sdTag">检测中</span>
+          </div>
+          <div class="card-desc">
+            本地 SD WebUI 入口。打开自动探测局域网与 EasyTier 虚拟网两条链路，优先走最快可用的那个。
+          </div>
+        </div>
+        <div class="card-action">
+          打开 SD
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
     </div>
   </div>
 
   <footer>
     GitHub Pages 个人站点 · 纯前端安全运行
   </footer>
+
+  <!-- SD 探测弹窗 -->
+  <div id="sdDialog">
+    <div class="dlg">
+      <div class="dlg-head">
+        <div class="spinner" id="sdSpin"></div>
+        <h3 id="sdTitle">正在连接 SD WebUI…</h3>
+        <p id="sdSub">分别探测局域网与 EasyTier 虚拟网</p>
+      </div>
+      <div class="dlg-body">
+        <div class="node checking" id="nodeLan">
+          <span class="pulse"></span>
+          <div class="meta">
+            <b>局域网 · 192.168.0.108:7860</b>
+            <span id="msgLan">探测中…</span>
+          </div>
+        </div>
+        <div class="node checking" id="nodeEt">
+          <span class="pulse"></span>
+          <div class="meta">
+            <b>EasyTier · 10.126.126.1:7860</b>
+            <span id="msgEt">探测中…</span>
+          </div>
+        </div>
+      </div>
+      <div class="dlg-tip" id="sdTip"></div>
+      <div class="dlg-btns" id="sdBtns" style="display:none">
+        <button class="ghost" id="btnRetry">重新检测</button>
+        <button class="primary" id="btnGo" disabled>进入 SD</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var LAN = 'http://192.168.0.108:7860';
+  var ET  = 'http://10.126.126.1:7860';
+  var TIMEOUT = 3500;
+
+  var card = document.getElementById('sdCard');
+  var tag  = document.getElementById('sdTag');
+  var dlg  = document.getElementById('sdDialog');
+
+  var state = { lan: null, et: null }; // true=通 false=不通 null=检测中
+  var ready = false;
+
+  // 探测单个地址：先 /sdapi/v1/options，失败再试 /
+  function probe(url) {
+    return new Promise(function (done) {
+      var timer = setTimeout(function () { done(false); }, TIMEOUT);
+      function tryPath(path) {
+        var x = new XMLHttpRequest();
+        x.open('GET', url + path, true);
+        x.timeout = TIMEOUT;
+        x.onreadystatechange = function () {
+          if (x.readyState !== 4) return;
+          clearTimeout(timer);
+          if (x.status === 0) { done(false); return; }
+          if (x.status >= 200 && x.status < 500) { done(true); return; }
+          tryPath('/'); // 回退根路径
+        };
+        x.onerror = function () { clearTimeout(timer); done(false); };
+        x.ontimeout = function () { clearTimeout(timer); done(false); };
+        try { x.send(); } catch (e) { clearTimeout(timer); done(false); }
+      }
+      tryPath('/sdapi/v1/options');
+    });
+  }
+
+  function nodeUI(id, status, msg) {
+    var n = document.getElementById(id);
+    n.className = 'node ' + (status === 'checking' ? 'checking' : status ? 'ok' : 'bad');
+    document.getElementById(msg === '' ? (id === 'nodeLan' ? 'msgLan' : 'msgEt') : (id === 'nodeLan' ? 'msgLan' : 'msgEt')).textContent = msg;
+  }
+
+  function setTag() {
+    if (!ready) return;
+    if (state.lan)      { tag.className = 'tag ok';  tag.textContent = '局域网可用'; return; }
+    if (state.et)       { tag.className = 'tag warn'; tag.textContent = '虚拟网可用'; return; }
+    tag.className = 'tag err'; tag.textContent = '离线';
+  }
+
+  function render() {
+    var lan = document.getElementById('nodeLan');
+    var et  = document.getElementById('nodeEt');
+    var tip = document.getElementById('sdTip');
+    var btnGo = document.getElementById('btnGo');
+    var spin = document.getElementById('sdSpin');
+    var title = document.getElementById('sdTitle');
+    var sub = document.getElementById('sdSub');
+
+    if (!ready) {
+      lan.className = 'node checking'; et.className = 'node checking';
+      document.getElementById('msgLan').textContent = '探测中…';
+      document.getElementById('msgEt').textContent = '探测中…';
+      tip.className = 'dlg-tip';
+      document.getElementById('sdBtns').style.display = 'none';
+      spin.style.display = 'block';
+      title.textContent = '正在连接 SD WebUI…';
+      sub.textContent = '分别探测局域网与 EasyTier 虚拟网';
+      return;
+    }
+
+    // 结果
+    lan.className = 'node ' + (state.lan ? 'ok' : 'bad');
+    et.className  = 'node ' + (state.et  ? 'ok' : 'bad');
+    document.getElementById('msgLan').textContent = state.lan ? '可达，直连局域网' : '不可达 · 你不在当前局域网';
+    document.getElementById('msgEt').textContent  = state.et  ? '可达，虚拟网已连通' : '不可达 · 请用 EasyTier 组网后使用';
+
+    spin.style.display = 'none';
+    document.getElementById('sdBtns').style.display = 'flex';
+
+    if (state.lan && state.et) {
+      title.textContent = '两条链路都通 🎉';
+      sub.textContent = '默认走局域网（更快），也可手动选虚拟网';
+      tip.className = 'dlg-tip show';
+      tip.textContent = '💡 局域网延迟更低，跨网络时切到 EasyTier。';
+      btnGo.disabled = false; btnGo.textContent = '进入 SD（局域网）';
+    } else if (state.lan) {
+      title.textContent = '已连上局域网 SD';
+      sub.textContent = '可以直接开画了';
+      tip.className = 'dlg-tip';
+      btnGo.disabled = false; btnGo.textContent = '进入 SD（局域网）';
+    } else if (state.et) {
+      title.textContent = '局域网不可达';
+      sub.textContent = '已自动切到 EasyTier 虚拟网';
+      tip.className = 'dlg-tip show';
+      tip.textContent = '⚠️ 192.168.0.108 不可达：你不在当前局域网。现在走 10.126.126.1 虚拟网，画起来一样用。';
+      btnGo.disabled = false; btnGo.textContent = '进入 SD（虚拟网）';
+    } else {
+      title.textContent = 'SD 暂时连不上';
+      sub.textContent = '两条链路都没响应';
+      tip.className = 'dlg-tip show';
+      tip.innerHTML = '❌ <b>局域网</b>：你不在当前局域网，连不上 192.168.0.108。<br>' +
+                      '❌ <b>虚拟网</b>：10.126.126.1 也没响应，请先用 EasyTier 组网后再用！';
+      btnGo.disabled = true; btnGo.textContent = '暂不可用';
+    }
+    setTag();
+  }
+
+  function runCheck() {
+    ready = false; state.lan = null; state.et = null;
+    render();
+    Promise.all([
+      probe(LAN).then(function (r) { state.lan = r; }),
+      probe(ET).then(function (r)  { state.et  = r; })
+    ]).then(function () {
+      ready = true;
+      render();
+    });
+  }
+
+  function openSD() {
+    if (state.lan) { window.open(LAN, '_blank', 'noopener'); return; }
+    if (state.et)  { window.open(ET,  '_blank', 'noopener'); return; }
+  }
+
+  // 卡片点击 → 弹窗检测
+  card.addEventListener('click', function (e) {
+    e.preventDefault();
+    dlg.className = 'sdDialog show'; // 兼容旧浏览器 classList
+    runCheck();
+  });
+  card.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+  });
+
+  document.getElementById('btnGo').addEventListener('click', function () {
+    if (this.disabled) return;
+    dlg.className = 'sdDialog';
+    openSD();
+  });
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    runCheck();
+  });
+
+  // 点遮罩关闭
+  dlg.addEventListener('click', function (e) {
+    if (e.target === dlg) dlg.className = 'sdDialog';
+  });
+
+  // 页面加载时静默探一次，只刷卡片角标
+  runCheck();
+})();
+</script>
 </body>
 </html>
