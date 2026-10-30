@@ -333,7 +333,7 @@
           检测并打开
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
-      </a>
+      </div>
     </div>
   </div>
 
@@ -380,7 +380,7 @@
   var LAN = 'http://192.168.0.108:7860';
   var ET  = 'http://10.126.126.1:7860';
   var PROBE = '/sdapi/v1/options';
-  var TIMEOUT = 3500;
+  var TIMEOUT = 5000;   // ← 唯一改动：3.5s → 5s，给慢启动的 SD 留足响应时间
 
   var card = document.getElementById('sdCard');
   var dlg  = document.getElementById('sdDlg');
@@ -396,13 +396,12 @@
   var ready = false;
   var seq = 0; // 探测序号，用来让旧回调失效，彻底干掉竞态/缓存残留误判
 
-  // ===== 核心修复：每次探测都是全新的请求，带随机串破坏缓存 + 强制 no-cache =====
+  // ===== 每次探测都是全新的请求：随机串破坏缓存 + 强制 no-cache =====
   function probe(url, sid) {
     return new Promise(function(resolve) {
       var t = setTimeout(function(){ resolve(false); }, TIMEOUT);
       try {
         var x = new XMLHttpRequest();
-        // 时间戳 + 随机数 + 序号，四重保证每次 URL 唯一，浏览器/代理都无法命中旧缓存
         var nocache = '?_t=' + Date.now() + '&_r=' + Math.random().toString(36).slice(2) + '&_s=' + sid;
         x.open('GET', url + PROBE + nocache, true);
         x.timeout = TIMEOUT;
@@ -435,7 +434,6 @@
     else                { tag.textContent = '离线';   tag.className += ' offline'; }
   }
 
-  // 弹窗里两条链路的状态行
   function renderRows() {
     var rLan = document.getElementById('rowLan');
     var rEt  = document.getElementById('rowEt');
@@ -482,7 +480,6 @@
       tip.textContent = '⚠️ 192.168.0.108 不可达（你不在当前局域网），现在走 10.126.126.1 虚拟网。';
       btnGo.disabled = false; btnGo.textContent = '进入 SD（虚拟网）';
     } else {
-      // ===== 双链路都不通：逐条列出 IP，给「尝试访问」按钮 =====
       title.textContent = 'SD 暂时连不上';
       sub.textContent = '两条链路都没响应，你可以手动点下面尝试直达：';
       tip.className = 'dlg-tip show';
@@ -500,7 +497,7 @@
   }
 
   function runCheck() {
-    seq++;                       // 让上一轮的所有回调作废
+    seq++;
     var sid = seq;
     ready = false;
     state.lan = null;
@@ -511,7 +508,7 @@
       probe(LAN, sid).then(function(r){ if (sid === seq) state.lan = r; }),
       probe(ET,  sid).then(function(r){ if (sid === seq) state.et  = r; })
     ]).then(function(){
-      if (sid !== seq) return;    // 期间又点了重测，丢弃旧结果
+      if (sid !== seq) return;
       ready = true;
       render();
     });
@@ -522,7 +519,6 @@
     if (state.et)  { window.open(ET,  '_blank', 'noopener'); return; }
   }
 
-  // 卡片点击 → 弹窗 + 检测
   card.addEventListener('click', function(e){
     e.preventDefault();
     dlg.className = 'sdDialog show';
@@ -539,7 +535,6 @@
   });
   btnRetry.addEventListener('click', function(){ runCheck(); });
 
-  // 点遮罩 / ESC 关闭
   dlg.addEventListener('click', function(e){
     if (e.target === dlg) dlg.className = 'sdDialog';
   });
