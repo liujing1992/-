@@ -2,296 +2,345 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>财神送福 · 红包雨</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>财神送红包</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;overflow:hidden;touch-action:none;font-family:"PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;}
-  body{
-    /* 金色光晕模糊背景 */
-    background:
-      radial-gradient(circle at 50% 18%, rgba(255,226,150,.75), transparent 42%),
-      radial-gradient(circle at 20% 70%, rgba(255,190,90,.40), transparent 45%),
-      radial-gradient(circle at 82% 62%, rgba(255,205,120,.45), transparent 45%),
-      linear-gradient(170deg,#7a4a0a 0%,#b7791f 38%,#e8b34a 68%,#f6d98a 100%);
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+    overflow:hidden;
+    width:100vw; height:100vh;
+    background: radial-gradient(ellipse at 50% 120%, #c8956c 0%, #b8860b 25%, #daa520 45%, #ffd700 65%, #fff8dc 80%, #fffacd 100%);
+    font-family: 'Microsoft YaHei', sans-serif;
+    touch-action: manipulation;
     position:relative;
-  }
-  /* 散景光斑 */
-  body::before{
-    content:"";position:fixed;inset:-10%;
-    background:
-      radial-gradient(circle at 12% 22%, rgba(255,255,255,.55) 0 4vw, transparent 5vw),
-      radial-gradient(circle at 88% 14%, rgba(255,255,255,.40) 0 6vw, transparent 7.5vw),
-      radial-gradient(circle at 70% 88%, rgba(255,255,255,.35) 0 5vw, transparent 6.5vw),
-      radial-gradient(circle at 30% 80%, rgba(255,255,255,.30) 0 3.5vw, transparent 5vw);
-    filter:blur(14px);z-index:0;pointer-events:none;
-  }
-  /* 财神剪影 */
-  #god{
-    position:fixed;left:50%;bottom:-2vh;transform:translateX(-50%);
-    height:62vh;z-index:0;pointer-events:none;opacity:.55;
-    filter:blur(3.5px) drop-shadow(0 0 24px rgba(255,210,120,.7));
-  }
-  #game{position:relative;z-index:2;height:100%;width:100%;}
+}
+/* 模糊光晕层 */
+body::before {
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background: radial-gradient(circle at 30% 60%, rgba(255,215,0,0.35) 0%, transparent 50%),
+                radial-gradient(circle at 70% 40%, rgba(255,248,220,0.3) 0%, transparent 45%),
+                radial-gradient(circle at 50% 80%, rgba(218,165,32,0.25) 0%, transparent 55%);
+    filter: blur(20px);
+}
+/* 财神爷剪影 */
+#cs {
+    position:fixed; bottom:-10px; left:50%; transform:translateX(-50%);
+    width:min(420px, 90vw); z-index:1; pointer-events:none; opacity:.92;
+}
+#cs svg { width:100%; height:auto; filter: drop-shadow(0 0 18px rgba(255,215,0,0.5)); }
 
-  /* HUD */
-  #hud{
-    position:fixed;top:0;left:0;right:0;z-index:5;
-    display:flex;justify-content:space-between;align-items:center;
-    padding:calc(env(safe-area-inset-top) + 12px) 18px 10px;
-    color:#5a2e00;font-weight:800;text-shadow:0 1px 0 rgba(255,255,255,.6);
-  }
-  .chip{background:rgba(255,255,255,.55);backdrop-filter:blur(8px);
-    border:1.5px solid rgba(255,255,255,.8);border-radius:999px;
-    padding:8px 16px;font-size:18px;letter-spacing:.5px;}
-  #timer{font-variant-numeric:tabular-nums;}
-  #hud small{display:block;font-size:10px;font-weight:700;opacity:.7;letter-spacing:2px;}
+/* UI */
+#ui {
+    position:fixed; top:12px; left:50%; transform:translateX(-50%);
+    z-index:20; display:flex; gap:24px; align-items:center;
+    background:rgba(139,0,0,0.85); border:2px solid #ffd700; border-radius:28px;
+    padding:8px 24px; box-shadow:0 4px 20px rgba(0,0,0,0.35);
+}
+#ui span { color:#ffd700; font-size:clamp(16px,4vw,22px); font-weight:bold; text-shadow:1px 1px 3px #000; }
 
-  /* 红包 */
-  .hb{
-    position:absolute;top:-90px;z-index:3;cursor:pointer;
-    transform-origin:center center;
-    animation:fall linear forwards;
-    filter:drop-shadow(0 8px 14px rgba(120,30,0,.45));
-  }
-  .hb:active{transform:scale(.88)!important;}
-  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);}}
-  .pkt{
-    position:relative;border-radius:22px;overflow:hidden;
-    background:linear-gradient(160deg,#ff4d3d 0%,#e0251a 55%,#b3100a 100%);
-    box-shadow:inset 0 6px 14px rgba(255,255,255,.35),inset 0 -8px 16px rgba(0,0,0,.22);
-  }
-  .pkt::before{content:"";position:absolute;top:0;left:0;right:0;height:34%;
-    background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0));}
-  .pkt::after{content:"福";position:absolute;inset:0;display:flex;
-    align-items:center;justify-content:center;
-    color:#ffe9a8;font-weight:900;text-shadow:0 2px 6px rgba(120,0,0,.5);}
-  .gold{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    width:30%;height:0;padding-bottom:30%;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%,#fff3c4,#ffcf4a 45%,#c98a10 100%);
-    box-shadow:0 0 0 5px rgba(255,255,255,.35);z-index:1;}
-  .pkt.small{width:64px;height:80px;}
-  .pkt.small::after{font-size:26px;}
-  .pkt.mid{width:86px;height:108px;}
-  .pkt.mid::after{font-size:34px;}
-  .pkt.big{width:118px;height:148px;}
-  .pkt.big::after{font-size:46px;content:"福";}
-  .pkt.big .crown{position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-    color:#ffe9a8;font-size:26px;z-index:3;text-shadow:0 2px 4px rgba(0,0,0,.4);}
-  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(0)}}
-  .hb.pop{animation:pop .28s ease-out forwards;pointer-events:none;}
+/* 红包 */
+.hongbao {
+    position:fixed; z-index:10; cursor:pointer; user-select:none;
+    animation: sway 1.2s ease-in-out infinite alternate;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.35));
+    pointer-events:auto;
+}
+.hongbao .hb-body {
+    display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg, #c0392b, #e74c3c 50%, #c0392b);
+    border:2px solid #ffd700; border-radius:12px; position:relative; overflow:hidden;
+}
+.hongbao .hb-flap {
+    position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+    width:60%; height:18px;
+    background: linear-gradient(180deg, #e74c3c, #c0392b);
+    border:2px solid #ffd700; border-radius:0 0 8px 8px; border-top:none;
+}
+.hongbao .hb-text { color:#ffd700; font-weight:bold; text-shadow:1px 1px 2px #000; z-index:2; }
+.hb-small .hb-body { width:64px; height:80px; }
+.hb-small .hb-text { font-size:13px; }
+.hb-medium .hb-body { width:82px; height:104px; }
+.hb-medium .hb-text { font-size:16px; }
+.hb-large .hb-body { width:104px; height:132px; }
+.hb-large .hb-text { font-size:20px; }
+.hb-large::after {
+    content:'👑'; position:absolute; top:-14px; right:-10px; font-size:22px;
+    animation: pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes sway { from{transform:rotate(-2deg)} to{transform:rotate(2deg)} }
+@keyframes pulse { from{transform:scale(1)} to{transform:scale(1.2)} }
+@keyframes fall {
+    from { top:-150px; opacity:0; }
+    to   { top:105vh;  opacity:1; }
+}
 
-  /* 飘分 */
-  .float{position:absolute;z-index:6;font-weight:900;font-size:30px;
-    color:#fff3c4;text-shadow:0 2px 8px rgba(180,40,0,.8);pointer-events:none;
-    animation:up .7s ease-out forwards;}
-  @keyframes up{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-70px) scale(1.3)}}
+/* 蹦分 */
+.floater {
+    position:fixed; z-index:30; pointer-events:none;
+    color:#ffd700; font-weight:bold; font-size:24px;
+    text-shadow:2px 2px 4px #000, 0 0 10px rgba(255,215,0,0.6);
+    animation: floatUp 0.8s ease-out forwards;
+}
+@keyframes floatUp {
+    0% { transform:translateY(0) scale(1); opacity:1; }
+    100% { transform:translateY(-60px) scale(1.4); opacity:0; }
+}
 
-  /* 面板 */
-  .panel{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;text-align:center;
-    background:rgba(70,30,0,.55);backdrop-filter:blur(10px);padding:24px;}
-  .card{background:linear-gradient(170deg,#fff3cf,#ffd97a 60%,#f0b94a);
-    border:3px solid #fff;border-radius:32px;padding:34px 30px 30px;max-width:340px;width:88%;
-    box-shadow:0 20px 60px rgba(0,0,0,.4);}
-  .card h1{font-size:44px;color:#b3100a;letter-spacing:4px;
-    text-shadow:0 2px 0 #fff,0 4px 8px rgba(180,40,0,.3);}
-  .card .sub{margin-top:6px;font-size:15px;color:#8a4a10;font-weight:700;letter-spacing:2px;}
-  .score-big{font-size:76px;font-weight:900;color:#c98a10;line-height:1.05;
-    text-shadow:0 3px 0 #fff,0 6px 12px rgba(180,80,0,.35);}
-  .score-big em{font-style:normal;font-size:30px;color:#b3100a;}
-  .btn{margin-top:22px;padding:16px 46px;border:none;border-radius:999px;cursor:pointer;
-    font-size:22px;font-weight:900;letter-spacing:3px;color:#7a1d00;
-    background:linear-gradient(180deg,#ffe9a8,#ffb84a);
-    box-shadow:0 6px 0 #c98a10,0 10px 20px rgba(0,0,0,.25);transition:transform .08s,box-shadow .08s;}
-  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #c98a10;}
-  .hint{margin-top:16px;font-size:12.5px;color:#6b3a10;font-weight:700;line-height:1.7;}
-  #start .rule{margin:16px 0 4px;font-size:14px;color:#7a2e00;line-height:1.9;font-weight:700;}
-  .hidden{display:none!important;}
-  .fire{font-size:40px;letter-spacing:6px;animation:pulse 1s ease-in-out infinite;}
-  @keyframes pulse{50%{transform:scale(1.12)}}
+/* 开始/结算面板 */
+#panel {
+    position:fixed; inset:0; z-index:50; display:flex;
+    align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(6px);
+}
+#panel .box {
+    background: linear-gradient(135deg, #8b0000, #c0392b);
+    border:3px solid #ffd700; border-radius:20px; padding:32px 28px;
+    text-align:center; max-width:85vw; min-width:260px;
+    box-shadow:0 0 40px rgba(255,215,0,0.3), inset 0 0 30px rgba(255,215,0,0.1);
+}
+#panel h1 { color:#ffd700; font-size:clamp(24px,6vw,34px); margin-bottom:10px; text-shadow:2px 2px 4px #000; }
+#panel p { color:#fff8dc; font-size:clamp(14px,3.5vw,18px); margin-bottom:8px; line-height:1.6; }
+#panel button {
+    margin-top:16px; padding:12px 40px; font-size:18px; font-weight:bold;
+    background: linear-gradient(135deg, #ffd700, #ffec8b); color:#8b0000;
+    border:none; border-radius:30px; cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    transition: transform 0.15s;
+}
+#panel button:active { transform:scale(0.95); }
+
+/* 结算特效 */
+#fireworks { position:fixed; inset:0; z-index:45; pointer-events:none; }
+.star-burst {
+    position:absolute; font-size:28px; animation: starFly 1s ease-out forwards;
+}
+@keyframes starFly {
+    0% { transform:translate(0,0) scale(0.5); opacity:1; }
+    100% { transform:translate(var(--tx), var(--ty)) scale(1.3); opacity:0; }
+}
 </style>
 </head>
 <body>
-  <!-- 财神剪影（纯 SVG 路径，无图片依赖） -->
-  <svg id="god" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#5a2e00" stop-opacity=".9"/>
-        <stop offset="1" stop-color="#2a1200" stop-opacity=".95"/>
-      </linearGradient>
-    </defs>
-    <!-- 身体袍子 -->
-    <path d="M40 400 Q30 300 60 240 Q80 200 100 190 Q120 200 140 240 Q170 300 160 400 Z" fill="url(#g)"/>
-    <!-- 宽袖 -->
-    <path d="M60 240 Q10 250 20 330 Q25 370 50 400 Q55 340 70 280 Z" fill="#3d1c00" opacity=".85"/>
-    <path d="M140 240 Q190 250 180 330 Q175 370 150 400 Q145 340 130 280 Z" fill="#3d1c00" opacity=".85"/>
-    <!-- 元宝 -->
-    <ellipse cx="100" cy="305" rx="34" ry="20" fill="#f6d98a" opacity=".9"/>
-    <ellipse cx="78" cy="312" rx="14" ry="16" fill="#e8b34a" opacity=".8"/>
-    <ellipse cx="122" cy="312" rx="14" ry="16" fill="#e8b34a" opacity=".8"/>
-    <!-- 头/帽 -->
-    <ellipse cx="100" cy="150" rx="46" ry="44" fill="url(#g)"/>
-    <path d="M54 130 Q100 70 146 130 Q140 100 100 88 Q60 100 54 130 Z" fill="#7a3d00"/>
-    <rect x="66" y="112" width="68" height="14" rx="6" fill="#f6d98a" opacity=".85"/>
-    <!-- 胡子 -->
-    <path d="M78 190 Q100 215 122 190 Q110 205 100 210 Q90 205 78 190 Z" fill="#fff3cf" opacity=".8"/>
-    <!-- 笑眼 -->
-    <path d="M82 158 Q90 150 98 158" stroke="#ffe9a8" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="M102 158 Q110 150 118 158" stroke="#ffe9a8" stroke-width="4" fill="none" stroke-linecap="round"/>
-  </svg>
 
-<div id="game"></div>
-
-<div id="hud" class="hidden">
-  <div class="chip">🧧 <span id="score">0</span> 分</div>
-  <div class="chip" style="text-align:right"><small>剩余</small><span id="timer">30</span></div>
+<!-- 财神爷 SVG -->
+<div id="cs">
+<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="gold" cx="50%" cy="40%">
+      <stop offset="0%" stop-color="#fff8dc" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#ffd700" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#b8860b" stop-opacity="0.75"/>
+    </radialGradient>
+    <filter id="blur2"><feGaussianBlur stdDeviation="2.5"/></filter>
+  </defs>
+  <!-- 身体 -->
+  <ellipse cx="200" cy="260" rx="140" ry="55" fill="url(#gold)" filter="url(#blur2)"/>
+  <!-- 头 -->
+  <circle cx="200" cy="130" r="68" fill="url(#gold)" filter="url(#blur2)"/>
+  <!-- 官帽 -->
+  <ellipse cx="200" cy="72" rx="82" ry="28" fill="url(#gold)" filter="url(#blur2)"/>
+  <circle cx="200" cy="58" r="22" fill="url(#gold)" filter="url(#blur2)"/>
+  <!-- 笑眼 -->
+  <path d="M168 125 Q178 115 188 125" stroke="#8b4513" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M212 125 Q222 115 232 125" stroke="#8b4513" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <!-- 笑嘴 -->
+  <path d="M185 148 Q200 164 215 148" stroke="#8b4513" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 白胡子 -->
+  <path d="M168 152 Q200 198 232 152 Q200 172 168 152Z" fill="rgba(255,250,240,0.8)" filter="url(#blur2)"/>
+  <!-- 元宝 -->
+  <ellipse cx="200" cy="238" rx="36" ry="18" fill="rgba(255,215,0,0.9)" filter="url(#blur2)"/>
+  <ellipse cx="186" cy="232" rx="12" ry="8" fill="rgba(255,248,220,0.85)"/>
+  <ellipse cx="214" cy="232" rx="12" ry="8" fill="rgba(255,248,220,0.85)"/>
+  <!-- 红袍纹理 -->
+  <path d="M120 255 Q200 220 280 255" stroke="rgba(178,34,34,0.4)" stroke-width="2.5" fill="none" filter="url(#blur2)"/>
+</svg>
 </div>
 
-<!-- 开始面板 -->
-<div id="start" class="panel">
-  <div class="card">
-    <div class="fire">🧧🎊🧧</div>
-    <h1>财神送福</h1>
-    <div class="sub">红包从天降 · 点中得分</div>
-    <div class="rule">
-      点小包 <b>+1</b>　点中包 <b>+3</b>　点大包 <b>+10</b> 🪙<br>
-      一共 30 秒，越到后头掉得越快<br>
-      漏掉不扣分，只管猛戳！
+<div id="ui">
+    <span>🪙 <b id="score">0</b></span>
+    <span>⏱ <b id="timer">30</b>s</span>
+</div>
+
+<div id="panel">
+    <div class="box">
+        <h1>🧧 财神送红包 🧧</h1>
+        <p id="panelMsg">点一下屏幕开始<br>戳红包得分，大包更值钱！</p>
+        <button id="startBtn">开始抢！</button>
     </div>
-    <button class="btn" id="playBtn">开 抢</button>
-    <div class="hint">静音？点一下屏幕再开抢，语音就能响<br>单文件离线可玩 · 电脑手机都行</div>
-  </div>
 </div>
 
-<!-- 结算面板 -->
-<div id="over" class="panel hidden">
-  <div class="card">
-    <div class="fire" id="overFire">🎉🧧🎉</div>
-    <h1 id="overTitle">你真棒！</h1>
-    <div class="sub" id="overSub">财神爷给你竖大拇指</div>
-    <div class="score-big"><span id="final">0</span><em>分</em></div>
-    <div class="hint" id="overMsg"></div>
-    <button class="btn" id="againBtn">再 来 一 局</button>
-  </div>
-</div>
+<div id="fireworks"></div>
 
 <script>
-(function(){
-  const game=document.getElementById('game');
-  const scoreEl=document.getElementById('score');
-  const timerEl=document.getElementById('timer');
-  const startP=document.getElementById('start');
-  const overP=document.getElementById('over');
-  const hud=document.getElementById('hud');
+// ===== 状态 =====
+var score = 0, timeLeft = 30, timer = null, spawner = null, gameOn = false;
+var scoreEl = document.getElementById('score'), timerEl = document.getElementById('timer');
+var panel = document.getElementById('panel'), panelMsg = document.getElementById('panelMsg');
+var startBtn = document.getElementById('startBtn'), fw = document.getElementById('fireworks');
 
-  let score=0,running=false,secs=30,timerId=null,spawnId=null,fallTime=5200,minGap=900,maxGap=1700;
+// ===== 语音 =====
+function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; u.rate = 1.08; u.pitch = 1.35; u.volume = 1;
+    var voices = speechSynthesis.getVoices();
+    for (var i = 0; i < voices.length; i++) {
+        if (voices[i].lang.indexOf('zh') !== -1 && (voices[i].name.indexOf('Female') !== -1 || voices[i].name.indexOf('女') !== -1)) {
+            u.voice = voices[i]; break;
+        }
+    }
+    speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
 
-  // 浏览器合成语音：财神爷腔调靠语速+音高调出来
-  function speak(text){
-    try{
-      const u=new SpeechSynthesisUtterance(text);
-      u.lang='zh-CN'; u.rate=0.92; u.pitch=1.35; u.volume=1;
-      // 优先选中文女声/童声，没有就走默认
-      const voices=speechSynthesis.getVoices();
-      const v=voices.find(x=>/zh/i.test(x.lang) && /female|xiaoxiao|mei|ting|xuan/i.test(x.name))
-           || voices.find(x=>/zh/i.test(x.lang));
-      if(v) u.voice=v;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    }catch(e){/* 静默降级，不影响游戏 */}
-  }
-  // 语音列表异步加载，提前触发一下让用户点屏幕激活（iOS/安卓要求手势激活）
-  speechSynthesis.getVoices();
+// ===== 开始按钮（唯一入口）=====
+startBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    // 解锁音频
+    if ('speechSynthesis' in window) {
+        var u = new SpeechSynthesisUtterance('');
+        u.volume = 0; speechSynthesis.speak(u);
+    }
+    startGame();
+});
 
-  function rnd(a,b){return Math.random()*(b-a)+a;}
+// ===== 背景点击 —— 什么都不做！=====
+document.body.addEventListener('click', function(e) {
+    // 如果点的是红包、按钮、面板，已经在各自的 handler 里处理了
+    // 点空白背景 → 不清除红包，不做任何事
+}, true);
 
-  function spawn(){
-    if(!running) return;
-    const wrap=document.documentElement.clientWidth||window.innerWidth;
-    const t=document.createElement('div');
-    t.className='hb';
-    const size=Math.random();
-    let kind,val,label;
-    if(size<0.55){kind='small';val=1;label='+1';}
-    else if(size<0.88){kind='mid';val=3;label='+3';}
-    else{kind='big';val=10;label='+10';}
+// ===== 生成红包 =====
+function spawn() {
+    if (!gameOn) return;
+    var r = document.createElement('div');
+    var sizes = ['small','medium','large'];
+    var weights = [0.5, 0.35, 0.15]; // 小包最多，大包稀有
+    var pick = Math.random(), acc = 0, size = 'small';
+    for (var i = 0; i < sizes.length; i++) { acc += weights[i]; if (pick < acc) { size = sizes[i]; break; } }
+    var pts = size === 'small' ? 1 : size === 'medium' ? 3 : 10;
 
-    t.style.left=rnd(8, wrap-120)+'px';
-    t.style.animationDuration=fallTime+'ms';
-    t.innerHTML=`<div class="pkt ${kind}">${kind==='big'?'<span class="crown">👑</span>':''}<span class="gold"></span></div>`;
-    t.dataset.val=val;
-    t.dataset.label=label;
+    r.className = 'hongbao hb-' + size;
+    r.dataset.points = pts;
+    r.innerHTML = '<div class="hb-flap"></div><div class="hb-body"><span class="hb-text">+' + pts + '</span></div>';
 
-    t.addEventListener('pointerdown',e=>{
-      e.preventDefault();
-      if(!running) return;
-      hit(t,label);
-    },{passive:false});
-    game.appendChild(t);
-    setTimeout(()=>{ if(t.parentNode) t.remove(); }, fallTime+400);
+    var left = Math.random() * (window.innerWidth - (size === 'large' ? 104 : size === 'medium' ? 82 : 64));
+    r.style.left = left + 'px';
+    r.style.top = '-150px';
 
-    // 难度：时间越往后，红包越多、掉得越快
-    const progress=1-Math.max(0,secs)/30;          // 0→1
-    fallTime=Math.max(2200, 5200*(1-progress*0.62)); // 最慢5.2s→最快2.2s
-    const gap=Math.max(380, rnd(minGap,maxGap)*(1-progress*0.55));
-    spawnId=setTimeout(spawn, gap);
-  }
+    // 下落速度：前慢后快
+    var elapsed = 30 - timeLeft;
+    var duration = Math.max(2.2, 5.2 - (elapsed / 30) * 3);
+    r.style.transition = 'top ' + duration + 's linear, opacity 0.3s';
 
-  function hit(t,label){
-    t.classList.add('pop');
-    score+=+t.dataset.val;
-    scoreEl.textContent=score;
-    const f=document.createElement('div');
-    f.className='float';
-    f.textContent=label;
-    f.style.left=t.style.left;
-    f.style.top=(t.getBoundingClientRect().top-20)+'px';
-    document.body.appendChild(f);
-    setTimeout(()=>f.remove(),750);
-    setTimeout(()=>{ if(t.parentNode) t.remove(); },260);
-  }
+    // ===== 红包自己的点击事件（关键！stopPropagation）=====
+    r.addEventListener('click', function(ev) {
+        ev.stopPropagation(); // 阻止冒泡到 body
+        ev.preventDefault();
+        score += pts;
+        scoreEl.textContent = score;
 
-  function end(){
-    running=false;
-    clearTimeout(spawnId); clearInterval(timerId);
-    [...game.children].forEach(c=>c.remove());
-    hud.classList.add('hidden');
-    overP.classList.remove('hidden');
+        // 蹦分
+        var f = document.createElement('div');
+        f.className = 'floater';
+        f.textContent = '+' + pts;
+        if (size === 'large') f.textContent = '👑 +' + pts;
+        f.style.left = (ev.clientX || (ev.touches && ev.touches[0].clientX) || left) + 'px';
+        f.style.top = (ev.clientY || (ev.touches && ev.touches[0].clientY) || 100) + 'px';
+        document.body.appendChild(f);
+        setTimeout(function(){ if(f.parentNode) f.remove(); }, 800);
 
-    const f=document.getElementById('final'); f.textContent=score;
-    const title=document.getElementById('overTitle');
-    const sub=document.getElementById('overSub');
-    const msg=document.getElementById('overMsg');
-    const fire=document.getElementById('overFire');
-    let words,emo;
-    if(score>=150){words='你真棒！';emo='🏆🧧🏆';sub.textContent='财神爷当场给你封了个大红包！';msg.textContent='满分欧气，今年钱包鼓鼓的～';}
-    else if(score>=80){words='你真棒！';emo='🎉🧧🎉';sub.textContent='财神爷给你竖大拇指';msg.textContent='手速和运气都顶呱呱！';}
-    else if(score>=30){words='你也棒！';emo='👏🧧👏';sub.textContent='财神爷笑眯眯地点头';msg.textContent='再来一局，大红包等你戳～';}
-    else{words='你也很棒！';emo='🤗🧧🤗';sub.textContent='财神爷摸摸头';msg.textContent='小手慢一点也没关系，大包专治手慢～';}
-    title.textContent=words; fire.textContent=emo;
-    speak(words+' 得了'+score+'分！');
-  }
+        r.remove();
+    }, { passive: false });
 
-  function start(){
-    score=0; secs=30; fallTime=5200; minGap=900; maxGap=1700;
-    scoreEl.textContent='0'; timerEl.textContent='30';
-    startP.classList.add('hidden'); overP.classList.add('hidden');
-    hud.classList.remove('hidden');
-    running=true;
-    spawn();
-    timerId=setInterval(()=>{
-      secs--;
-      timerEl.textContent=secs;
-      if(secs<=0){ timerEl.textContent='0'; end(); }
-    },1000);
-  }
+    // touch 支持
+    r.addEventListener('touchstart', function(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        score += pts;
+        scoreEl.textContent = score;
 
-  document.getElementById('playBtn').addEventListener('click',start);
-  document.getElementById('againBtn').addEventListener('click',start);
-  // 首屏点一下激活语音（移动端必须）
-  document.body.addEventListener('pointerdown',()=>{ speechSynthesis.getVoices(); },{once:true});
-})();
+        var tx = ev.touches[0].clientX, ty = ev.touches[0].clientY;
+        var f = document.createElement('div');
+        f.className = 'floater';
+        f.textContent = '+' + pts;
+        if (size === 'large') f.textContent = '👑 +' + pts;
+        f.style.left = tx + 'px'; f.style.top = ty + 'px';
+        document.body.appendChild(f);
+        setTimeout(function(){ if(f.parentNode) f.remove(); }, 800);
+
+        r.remove();
+    }, { passive: false });
+
+    document.body.appendChild(r);
+
+    // 落地后自动消失
+    setTimeout(function() {
+        if (r.parentNode) r.remove();
+    }, duration * 1000);
+}
+
+// ===== 游戏逻辑 =====
+function startGame() {
+    // 清场
+    document.querySelectorAll('.hongbao').forEach(function(el){ el.remove(); });
+    score = 0; timeLeft = 30; gameOn = true;
+    scoreEl.textContent = '0'; timerEl.textContent = '30';
+    panel.style.display = 'none';
+    fw.innerHTML = '';
+
+    // 红包生成：前慢后快
+    var spawnInterval = 1200;
+    spawner = setInterval(function() {
+        spawn();
+        if (timeLeft < 15) spawnInterval = 900;
+        else if (timeLeft < 8) spawnInterval = 650;
+    }, spawnInterval);
+
+    // 倒计时
+    timer = setInterval(function() {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) endGame();
+    }, 1000);
+}
+
+function endGame() {
+    gameOn = false;
+    clearInterval(timer); clearInterval(spawner);
+    // 清剩余红包
+    document.querySelectorAll('.hongbao').forEach(function(el){ el.remove(); });
+
+    panel.style.display = 'flex';
+    var msg = '得分：<b>' + score + '</b> 分<br>';
+    if (score >= 150) msg += '🏆 财神爷当场给你封了个大红包！';
+    else if (score >= 100) msg += '🎉 手速惊人，财运爆棚！';
+    else if (score >= 50) msg += '👍 不错不错，再练练！';
+    else msg += '💪 还得多练练手速哦～';
+    panelMsg.innerHTML = msg;
+    startBtn.textContent = '再来一局';
+
+    // 撒花
+    for (var i = 0; i < 12; i++) {
+        setTimeout(function() {
+            var s = document.createElement('div');
+            s.className = 'star-burst';
+            s.textContent = ['🧧','⭐','💰','🎊','👑'][Math.floor(Math.random()*5)];
+            s.style.left = '50%'; s.style.top = '50%';
+            s.style.setProperty('--tx', (Math.random()*300-150) + 'px');
+            s.style.setProperty('--ty', (Math.random()*300-150) + 'px');
+            fw.appendChild(s);
+            setTimeout(function(){ s.remove(); }, 1000);
+        }, i * 80);
+    }
+
+    // 语音播报
+    var say = '你真棒！得了' + score + '分！';
+    if (score >= 150) say += '财神爷当场给你封了个大红包！';
+    else if (score >= 100) say += '手速惊人，财运爆棚！';
+    setTimeout(function(){ speak(say); }, 400);
+}
 </script>
 </body>
 </html>
