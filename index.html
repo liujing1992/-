@@ -16,11 +16,13 @@
     --accent: #7cdf9e;
     --accent-2: #4db6ac;
     --accent-glow: rgba(124, 223, 158, 0.2);
+    --warn: #f59e0b;
+    --err: #ff7a7a;
     --radius: 16px;
   }
-  
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     background: var(--bg-deep);
@@ -39,7 +41,7 @@
   body::before {
     content: '';
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: 
+    background:
       radial-gradient(ellipse at 20% 10%, rgba(76, 175, 80, 0.25) 0%, transparent 55%),
       radial-gradient(ellipse at 80% 90%, rgba(56, 142, 60, 0.2) 0%, transparent 50%),
       radial-gradient(ellipse at 50% 50%, rgba(27, 94, 32, 0.15) 0%, transparent 70%),
@@ -54,20 +56,20 @@
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
   }
-  
+
   .container {
     max-width: 780px;
     margin: 0 auto;
     width: 100%;
     position: relative; z-index: 1;
   }
-  
+
   /* 头部紧凑 */
   header {
     text-align: center;
     margin-bottom: 18px;
   }
-  
+
   .badge {
     display: inline-flex;
     align-items: center;
@@ -82,34 +84,36 @@
     margin-bottom: 10px;
     letter-spacing: 0.5px;
   }
-  
+
   .badge .dot {
     width: 5px; height: 5px;
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 8px var(--accent);
+    animation: dotpulse 1.6s ease-in-out infinite;
   }
-  
+  @keyframes dotpulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
   h1 {
     font-size: 26px;
     font-weight: 800;
     margin-bottom: 4px;
     letter-spacing: -0.3px;
   }
-  
+
   h1 span {
     background: linear-gradient(90deg, var(--accent), var(--accent-2));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  
+
   p.subtitle {
     color: var(--text-dim);
     font-size: 12.5px;
     margin-top: 4px;
   }
-  
+
   /* 网格：三卡一屏 */
   .tools-grid {
     display: grid;
@@ -117,7 +121,7 @@
     gap: 12px;
     margin-bottom: 16px;
   }
-  
+
   /* ===== 磨砂玻璃卡片（缩小版）===== */
   .tool-card {
     background: var(--bg-panel);
@@ -134,22 +138,25 @@
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
     min-height: 148px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    cursor: pointer;
   }
-  
+
   .tool-card:hover {
     transform: translateY(-3px);
     border-color: var(--border-active);
     box-shadow: 0 8px 28px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.08);
     background: var(--bg-hover);
   }
-  
+
+  .tool-card.locked:hover { transform: none; border-color: var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05); background: var(--bg-panel); }
+
   .card-icon {
     font-size: 30px;
     margin-bottom: 10px;
     display: block;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
-  
+
   .card-title {
     font-size: 15px;
     font-weight: 700;
@@ -160,7 +167,7 @@
     flex-wrap: wrap;
     gap: 6px;
   }
-  
+
   .card-desc {
     font-size: 12px;
     color: var(--text-dim);
@@ -168,7 +175,7 @@
     margin-bottom: 14px;
     flex-grow: 1;
   }
-  
+
   .card-action {
     display: inline-flex;
     align-items: center;
@@ -178,18 +185,17 @@
     color: var(--accent);
     margin-top: auto;
   }
-  
+
   .card-action svg {
     width: 15px; height: 15px;
     fill: none; stroke: currentColor;
     stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
     transition: transform 0.2s;
   }
-  
-  .tool-card:hover .card-action svg {
-    transform: translateX(4px);
-  }
-  
+
+  .tool-card:hover .card-action svg { transform: translateX(4px); }
+  .tool-card.locked:hover .card-action svg { transform: none; }
+
   /* 底部紧凑 */
   footer {
     text-align: center;
@@ -199,7 +205,7 @@
     border-top: 1px solid rgba(255,255,255,0.06);
     position: relative; z-index: 1;
   }
-  
+
   /* ===== SD 弹窗 ===== */
   .sdDialog {
     position: fixed; inset: 0;
@@ -214,7 +220,7 @@
     background: rgba(255,255,255,0.1);
     border: 1px solid var(--border-active);
     border-radius: var(--radius);
-    padding: 26px 22px; max-width: 380px; width: 100%;
+    padding: 26px 22px; max-width: 400px; width: 100%;
     text-align: center;
     backdrop-filter: blur(20px) saturate(1.3);
     -webkit-backdrop-filter: blur(20px) saturate(1.3);
@@ -222,21 +228,63 @@
   }
   .sdTitle { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 6px; }
   .sdSub { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
-  .dlg-tip { font-size: 12.5px; color: var(--accent); background: rgba(124,223,158,0.1); padding: 10px 12px; border-radius: 10px; margin-bottom: 18px; display: none; line-height: 1.5; border: 1px solid rgba(124,223,158,0.15); }
+
+  .probe {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 16px; text-align: left;
+  }
+  .probe-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    font-size: 12.5px;
+  }
+  .probe-row .pdot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+    background: var(--text-dim); box-shadow: 0 0 6px currentColor;
+  }
+  .probe-row.checking .pdot { background: var(--accent); animation: blink 1s infinite; }
+  .probe-row.ok .pdot { background: var(--accent); }
+  .probe-row.bad .pdot { background: var(--err); }
+  @keyframes blink { 50%{opacity:.25} }
+  .probe-row .pmeta { flex-grow: 1; }
+  .probe-row .pmeta b { display: block; color: #fff; font-size: 12.5px; }
+  .probe-row .pmeta span { font-size: 11px; }
+  .probe-row.ok .pmeta span { color: var(--accent); }
+  .probe-row.bad .pmeta span { color: var(--err); }
+  .probe-row.checking .pmeta span { color: var(--accent); }
+  .probe-row .ptry {
+    font-size: 11px; color: var(--accent); text-decoration: none;
+    border: 1px solid rgba(124,223,158,0.3); padding: 3px 8px; border-radius: 6px;
+    display: none;
+  }
+  .probe-row.bad .ptry { display: inline-block; }
+
+  .dlg-tip {
+    font-size: 12px; color: var(--warn);
+    background: rgba(245,158,11,0.1); padding: 10px 12px;
+    border-radius: 10px; margin-bottom: 18px; display: none; line-height: 1.55;
+    border: 1px solid rgba(245,158,11,0.25); text-align: left;
+  }
   .dlg-tip.show { display: block; }
+
   .sdBtns { display: flex; gap: 10px; justify-content: center; }
   .sdBtn {
     padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
-    cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: var(--text);
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08); color: var(--text);
     transition: all 0.2s; backdrop-filter: blur(8px);
   }
   .sdBtn.primary { background: var(--accent); color: #0a1f0e; border-color: var(--accent); }
   .sdBtn.primary:hover { box-shadow: 0 0 14px var(--accent-glow); }
-  .sdBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .sdTag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; background: rgba(124,223,158,0.12); color: var(--accent); font-weight: 600; }
-  .sdTag.offline { background: rgba(255,100,100,0.12); color: #ff7a7a; }
+  .sdBtn.primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .sdBtn.ghost { background: transparent; border-color: rgba(255,255,255,0.1); color: var(--text-dim); }
+
+  .sdTag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; background: rgba(124,223,158,0.12); color: var(--accent); font-weight: 600; transition: .2s; }
+  .sdTag.offline { background: rgba(255,100,100,0.12); color: var(--err); }
   .sdTag.lan { background: rgba(124,223,158,0.15); color: var(--accent); }
   .sdTag.et { background: rgba(77,182,172,0.15); color: var(--accent-2); }
+  .sdTag.checking { background: rgba(255,255,255,0.08); color: var(--text-dim); }
 </style>
 </head>
 <body>
@@ -275,11 +323,11 @@
       </a>
 
       <!-- 工具 3：SD -->
-      <a href="#" id="sdCard" class="tool-card" tabindex="0">
+      <div class="tool-card" id="sdCard" tabindex="0" role="button">
         <div>
           <div class="card-icon">🎨</div>
-          <div class="card-title">Stable Diffusion <span class="sdTag" id="sdTag">检测中</span></div>
-          <div class="card-desc">AI 绘画本地服务。自动检测局域网与虚拟网，智能选最佳链路。</div>
+          <div class="card-title">Stable Diffusion <span class="sdTag checking" id="sdTag">检测中</span></div>
+          <div class="card-desc" id="sdDesc">AI 绘画本地服务。自动检测局域网与虚拟网，智能选最佳链路。</div>
         </div>
         <div class="card-action">
           检测并打开
@@ -294,13 +342,34 @@
   </footer>
 
   <!-- SD 探测弹窗 -->
-  <div class="sdDialog" id="sdDlg">
+  <div class="sdDialog" id="sdDlg" role="dialog" aria-modal="true">
     <div class="sdBox">
       <div class="sdTitle" id="dlgTitle">正在检测 SD 服务</div>
-      <div class="sdSub" id="dlgSub">探测局域网与 EasyTier 虚拟网...</div>
+      <div class="sdSub" id="dlgSub">分别探测局域网与 EasyTier 虚拟网…</div>
+
+      <div class="probe">
+        <div class="probe-row checking" id="rowLan">
+          <span class="pdot"></span>
+          <div class="pmeta">
+            <b>局域网 · 192.168.0.108:7860</b>
+            <span id="msgLan">探测中…</span>
+          </div>
+          <a class="ptry" href="http://192.168.0.108:7860" target="_blank" rel="noopener">尝试访问</a>
+        </div>
+        <div class="probe-row checking" id="rowEt">
+          <span class="pdot"></span>
+          <div class="pmeta">
+            <b>虚拟网 · 10.126.126.1:7860</b>
+            <span id="msgEt">探测中…</span>
+          </div>
+          <a class="ptry" href="http://10.126.126.1:7860" target="_blank" rel="noopener">尝试访问</a>
+        </div>
+      </div>
+
       <div class="dlg-tip" id="dlgTip"></div>
+
       <div class="sdBtns">
-        <button class="sdBtn" id="btnRetry">重测</button>
+        <button class="sdBtn ghost" id="btnRetry">重新检测</button>
         <button class="sdBtn primary" id="btnGo" disabled>进入 SD</button>
       </div>
     </div>
@@ -310,75 +379,142 @@
 (function() {
   var LAN = 'http://192.168.0.108:7860';
   var ET  = 'http://10.126.126.1:7860';
-  var state = { lan: null, et: null };
-  var ready = false;
-  
+  var PROBE = '/sdapi/v1/options';
+  var TIMEOUT = 3500;
+
   var card = document.getElementById('sdCard');
-  var dlg = document.getElementById('sdDlg');
-  var tag = document.getElementById('sdTag');
+  var dlg  = document.getElementById('sdDlg');
+  var tag  = document.getElementById('sdTag');
+  var desc = document.getElementById('sdDesc');
   var title = document.getElementById('dlgTitle');
-  var sub = document.getElementById('dlgSub');
-  var tip = document.getElementById('dlgTip');
+  var sub   = document.getElementById('dlgSub');
+  var tip   = document.getElementById('dlgTip');
   var btnGo = document.getElementById('btnGo');
   var btnRetry = document.getElementById('btnRetry');
 
-  function probe(url) {
+  var state = { lan: null, et: null }; // true=通 false=不通 null=检测中
+  var ready = false;
+  var seq = 0; // 探测序号，用来让旧回调失效，彻底干掉竞态/缓存残留误判
+
+  // ===== 核心修复：每次探测都是全新的请求，带随机串破坏缓存 + 强制 no-cache =====
+  function probe(url, sid) {
     return new Promise(function(resolve) {
-      var t = setTimeout(function(){ resolve(false); }, 3500);
-      var x = new XMLHttpRequest();
-      x.open('GET', url + '/sdapi/v1/options', true);
-      x.timeout = 3500;
-      x.onload = function(){ clearTimeout(t); resolve(x.status >= 200 && x.status < 400); };
-      x.onerror = function(){ clearTimeout(t); resolve(false); };
-      x.ontimeout = function(){ clearTimeout(t); resolve(false); };
-      try { x.send(); } catch(e) { clearTimeout(t); resolve(false); }
+      var t = setTimeout(function(){ resolve(false); }, TIMEOUT);
+      try {
+        var x = new XMLHttpRequest();
+        // 时间戳 + 随机数 + 序号，四重保证每次 URL 唯一，浏览器/代理都无法命中旧缓存
+        var nocache = '?_t=' + Date.now() + '&_r=' + Math.random().toString(36).slice(2) + '&_s=' + sid;
+        x.open('GET', url + PROBE + nocache, true);
+        x.timeout = TIMEOUT;
+        x.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        x.setRequestHeader('Pragma', 'no-cache');
+        x.setRequestHeader('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+        x.setRequestHeader('If-Modified-Since', '0');
+        x.onreadystatechange = function(){
+          if (x.readyState !== 4) return;
+          clearTimeout(t);
+          // status 0 = 网络层失败（跨域/端口拒绝/不通）；2xx/3xx 算通
+          if (x.status === 0) { resolve(false); return; }
+          resolve(x.status >= 200 && x.status < 400);
+        };
+        x.onerror = function(){ clearTimeout(t); resolve(false); };
+        x.ontimeout = function(){ clearTimeout(t); resolve(false); };
+        x.send();
+      } catch(e) {
+        clearTimeout(t);
+        resolve(false);
+      }
     });
   }
 
   function setTag() {
     tag.className = 'sdTag';
-    if (!ready) { tag.textContent = '检测中'; return; }
-    if (state.lan) { tag.textContent = '局域网'; tag.className += ' lan'; }
-    else if (state.et) { tag.textContent = '虚拟网'; tag.className += ' et'; }
-    else { tag.textContent = '离线'; tag.className += ' offline'; }
+    if (!ready) { tag.textContent = '检测中'; tag.className += ' checking'; return; }
+    if (state.lan)      { tag.textContent = '局域网'; tag.className += ' lan'; }
+    else if (state.et)  { tag.textContent = '虚拟网'; tag.className += ' et'; }
+    else                { tag.textContent = '离线';   tag.className += ' offline'; }
+  }
+
+  // 弹窗里两条链路的状态行
+  function renderRows() {
+    var rLan = document.getElementById('rowLan');
+    var rEt  = document.getElementById('rowEt');
+    var mLan = document.getElementById('msgLan');
+    var mEt  = document.getElementById('msgEt');
+
+    if (!ready) {
+      rLan.className = 'probe-row checking'; mLan.textContent = '探测中…';
+      rEt.className  = 'probe-row checking'; mEt.textContent  = '探测中…';
+      return;
+    }
+    rLan.className = 'probe-row ' + (state.lan ? 'ok' : 'bad');
+    rEt.className  = 'probe-row ' + (state.et  ? 'ok' : 'bad');
+    mLan.textContent = state.lan ? '可达，直连局域网' : '不可达（不在同局域网 / SD未启动）';
+    mEt.textContent  = state.et  ? '可达，虚拟网已连通' : '不可达（请确认 EasyTier 已组网）';
   }
 
   function render() {
+    renderRows();
+
     if (!ready) {
       title.textContent = '正在检测 SD 服务';
-      sub.textContent = '探测局域网与 EasyTier 虚拟网...';
-      tip.className = 'dlg-tip'; btnGo.disabled = true; btnGo.textContent = '检测中';
-    } else if (state.lan && state.et) {
-      title.textContent = '双链路通畅';
+      sub.textContent = '分别探测局域网与 EasyTier 虚拟网…';
+      tip.className = 'dlg-tip';
+      btnGo.disabled = true; btnGo.textContent = '检测中…';
+      setTag();
+      return;
+    }
+
+    if (state.lan && state.et) {
+      title.textContent = '双链路通畅 🎉';
       sub.textContent = '局域网延迟更低，跨网络时切到虚拟网。';
-      tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入（局域网）';
+      tip.className = 'dlg-tip';
+      btnGo.disabled = false; btnGo.textContent = '进入 SD（局域网）';
     } else if (state.lan) {
       title.textContent = '已连上局域网 SD';
       sub.textContent = '可以直接开画了';
-      tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入（局域网）';
+      tip.className = 'dlg-tip';
+      btnGo.disabled = false; btnGo.textContent = '进入 SD（局域网）';
     } else if (state.et) {
       title.textContent = '局域网不可达';
       sub.textContent = '已自动切到 EasyTier 虚拟网';
       tip.className = 'dlg-tip show';
-      tip.textContent = '⚠️ 192.168.0.108 不可达（不在同局域网）。走 10.126.126.1 虚拟网。';
-      btnGo.disabled = false; btnGo.textContent = '进入（虚拟网）';
+      tip.textContent = '⚠️ 192.168.0.108 不可达（你不在当前局域网），现在走 10.126.126.1 虚拟网。';
+      btnGo.disabled = false; btnGo.textContent = '进入 SD（虚拟网）';
     } else {
+      // ===== 双链路都不通：逐条列出 IP，给「尝试访问」按钮 =====
       title.textContent = 'SD 暂时连不上';
-      sub.textContent = '两条链路都没响应';
+      sub.textContent = '两条链路都没响应，你可以手动点下面尝试直达：';
       tip.className = 'dlg-tip show';
-      tip.innerHTML = '❌ 局域网：不在当前局域网<br>❌ 虚拟网：请先用 EasyTier 组网后再用！';
+      tip.innerHTML =
+        '🔴 <b>192.168.0.108:7860</b> — 局域网不可达<br>' +
+        '🔴 <b>10.126.126.1:7860</b> — 虚拟网不可达<br><br>' +
+        '<span style="color:var(--text-dim);font-size:11px;">' +
+        '① 先点「重新检测」，组网变化要等 1~2 秒再测；<br>' +
+        '② 若 IP 能打开但报跨域，是浏览器安全限制，SD 其实在线；<br>' +
+        '③ IP 通但端口拒绝 = <b>SD 没启动</b>，去 108 机器开 WebUI。' +
+        '</span>';
       btnGo.disabled = true; btnGo.textContent = '暂不可用';
     }
     setTag();
   }
 
   function runCheck() {
-    ready = false; state.lan = null; state.et = null;
+    seq++;                       // 让上一轮的所有回调作废
+    var sid = seq;
+    ready = false;
+    state.lan = null;
+    state.et  = null;
     render();
+
     Promise.all([
-      probe(LAN).then(function (r) { state.lan = r; }),
-      probe(ET).then(function (r)  { state.et  = r; })
-    ]).then(function () { ready = true; render(); });
+      probe(LAN, sid).then(function(r){ if (sid === seq) state.lan = r; }),
+      probe(ET,  sid).then(function(r){ if (sid === seq) state.et  = r; })
+    ]).then(function(){
+      if (sid !== seq) return;    // 期间又点了重测，丢弃旧结果
+      ready = true;
+      render();
+    });
   }
 
   function openSD() {
@@ -386,21 +522,38 @@
     if (state.et)  { window.open(ET,  '_blank', 'noopener'); return; }
   }
 
-  card.addEventListener('click', function (e) {
-    e.preventDefault(); dlg.className = 'sdDialog show'; runCheck();
+  // 卡片点击 → 弹窗 + 检测
+  card.addEventListener('click', function(e){
+    e.preventDefault();
+    dlg.className = 'sdDialog show';
+    runCheck();
   });
-  card.addEventListener('keydown', function (e) {
+  card.addEventListener('keydown', function(e){
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
   });
-  btnGo.addEventListener('click', function () {
-    if (this.disabled) return; dlg.className = 'sdDialog'; openSD();
+
+  btnGo.addEventListener('click', function(){
+    if (this.disabled) return;
+    dlg.className = 'sdDialog';
+    openSD();
   });
-  btnRetry.addEventListener('click', function () { runCheck(); });
-  dlg.addEventListener('click', function (e) {
+  btnRetry.addEventListener('click', function(){ runCheck(); });
+
+  // 点遮罩 / ESC 关闭
+  dlg.addEventListener('click', function(e){
     if (e.target === dlg) dlg.className = 'sdDialog';
   });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && dlg.className.indexOf('show') > -1) dlg.className = 'sdDialog';
+  });
 
-  runCheck();
+  // 页面加载静默探一次，只刷新卡片角标（不弹窗）
+  (function silent(){
+    var sid = ++seq;
+    probe(LAN, sid).then(function(r){ if (sid === seq) { state.lan = r; setTag(); } });
+    probe(ET,  sid).then(function(r){ if (sid === seq) { state.et  = r; setTag();
+      if (state.lan !== null && state.et !== null) ready = true; } });
+  })();
 })();
 </script>
 </body>
