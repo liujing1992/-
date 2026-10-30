@@ -2,405 +2,247 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>个人在线工具箱 | Tools Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>局域网 & SD 工具箱</title>
 <style>
   :root {
-    --bg-deep: #1a2e1a;
-    --bg-panel: rgba(255, 255, 255, 0.08);
-    --bg-hover: rgba(255, 255, 255, 0.14);
-    --border: rgba(255, 255, 255, 0.12);
-    --border-active: rgba(120, 220, 140, 0.5);
-    --text: #e8f5e9;
-    --text-dim: #a5c4a8;
-    --accent: #7cdf9e;
-    --accent-2: #4db6ac;
-    --accent-glow: rgba(124, 223, 158, 0.2);
-    --radius: 16px;
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.25);
+    --text-main: #1a3c2b;
+    --text-dim: #4a7a5e;
+    --accent: #10b981;
   }
-  
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: var(--bg-deep);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 16px 14px 14px;
-    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: linear-gradient(135deg, #e0f2e9 0%, #c8e6d3 50%, #dcedf5 100%);
+    background-attachment: fixed;
     position: relative;
-    overflow-x: hidden;
-  }
-
-  /* ===== 护眼绿渐变背景 ===== */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: 
-      radial-gradient(ellipse at 20% 10%, rgba(76, 175, 80, 0.25) 0%, transparent 55%),
-      radial-gradient(ellipse at 80% 90%, rgba(56, 142, 60, 0.2) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 50%, rgba(27, 94, 32, 0.15) 0%, transparent 70%),
-      linear-gradient(160deg, #1b3a2a 0%, #1a2e1a 40%, #162616 100%);
-  }
-
-  /* ===== 叠加层蒙版 ===== */
-  body::after {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: rgba(10, 30, 15, 0.35);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-  }
-  
-  .container {
-    max-width: 780px;
-    margin: 0 auto;
-    width: 100%;
-    position: relative; z-index: 1;
-  }
-  
-  /* 头部紧凑 */
-  header {
-    text-align: center;
-    margin-bottom: 18px;
-  }
-  
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--border-active);
-    background: rgba(124, 223, 158, 0.1);
-    font-size: 11px;
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
-  }
-  
-  .badge .dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-  }
-  
-  h1 {
-    font-size: 26px;
-    font-weight: 800;
-    margin-bottom: 4px;
-    letter-spacing: -0.3px;
-  }
-  
-  h1 span {
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  
-  p.subtitle {
-    color: var(--text-dim);
-    font-size: 12.5px;
-    margin-top: 4px;
-  }
-  
-  /* 网格：三卡一屏 */
-  .tools-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  /* ===== 磨砂玻璃卡片（缩小版）===== */
-  .tool-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 16px;
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 40px 16px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    align-items: center;
+  }
+  /* 叠加层蒙版 */
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background: rgba(220, 240, 230, 0.35);
+    backdrop-filter: blur(4px); z-index: -1;
+  }
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+  .header p { font-size: 13px; color: var(--text-dim); }
+
+  .grid {
+    width: 100%; max-width: 360px;
+    display: grid; grid-template-columns: 1fr; gap: 16px;
+  }
+  /* 透明磨砂玻璃小卡 */
+  .card {
+    background: var(--glass-bg);
     backdrop-filter: blur(16px) saturate(1.4);
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    min-height: 148px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 18px;
+    min-height: 118px;
+    box-shadow: 0 8px 24px rgba(0,40,20,0.06);
+    cursor: pointer; transition: all 0.2s ease;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: center;
   }
+  .card:active { transform: scale(0.98); }
+  .card-title { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .card-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
   
-  .tool-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--border-active);
-    box-shadow: 0 8px 28px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.08);
-    background: var(--bg-hover);
+  .sdTag {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: normal;
+    background: rgba(0,0,0,0.05); color: var(--text-dim);
   }
-  
-  .card-icon {
-    font-size: 30px;
-    margin-bottom: 10px;
-    display: block;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-  }
-  
-  .card-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  
-  .card-desc {
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.5;
-    margin-bottom: 14px;
-    flex-grow: 1;
-  }
-  
-  .card-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-top: auto;
-  }
-  
-  .card-action svg {
-    width: 15px; height: 15px;
-    fill: none; stroke: currentColor;
-    stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
-    transition: transform 0.2s;
-  }
-  
-  .tool-card:hover .card-action svg {
-    transform: translateX(4px);
-  }
-  
-  /* 底部紧凑 */
-  footer {
-    text-align: center;
-    font-size: 11px;
-    color: var(--text-dim);
-    padding-top: 12px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    position: relative; z-index: 1;
-  }
-  
-  /* ===== SD 弹窗 ===== */
+  .sdTag.lan { background: rgba(16,185,129,0.2); color: #065f46; }
+  .sdTag.et { background: rgba(52,211,153,0.2); color: #047857; }
+  .sdTag.offline { background: rgba(255,80,80,0.15); color: #b91c1c; }
+  .sdTag.nosd { background: rgba(245,158,11,0.2); color: #b45309; } /* 新增：SD未启动橙色 */
+
+  /* 弹窗 */
   .sdDialog {
-    position: fixed; inset: 0;
-    background: rgba(10, 25, 12, 0.82);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    display: none; align-items: center; justify-content: center;
-    z-index: 999; padding: 16px;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; z-index: 99; padding: 20px;
   }
   .sdDialog.show { display: flex; }
-  .sdBox {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid var(--border-active);
-    border-radius: var(--radius);
-    padding: 26px 22px; max-width: 380px; width: 100%;
-    text-align: center;
-    backdrop-filter: blur(20px) saturate(1.3);
-    -webkit-backdrop-filter: blur(20px) saturate(1.3);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+  .dlg-box {
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.5); border-radius: 20px;
+    width: 100%; max-width: 320px; padding: 24px; text-align: center;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
   }
-  .sdTitle { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 6px; }
-  .sdSub { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
-  .dlg-tip { font-size: 12.5px; color: var(--accent); background: rgba(124,223,158,0.1); padding: 10px 12px; border-radius: 10px; margin-bottom: 18px; display: none; line-height: 1.5; border: 1px solid rgba(124,223,158,0.15); }
+  .dlg-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .dlg-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
+  .dlg-tip { display: none; font-size: 12px; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 10px; margin-bottom: 16px; text-align: left; line-height: 1.5; }
   .dlg-tip.show { display: block; }
-  .sdBtns { display: flex; gap: 10px; justify-content: center; }
-  .sdBtn {
-    padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
-    cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: var(--text);
-    transition: all 0.2s; backdrop-filter: blur(8px);
+  .dlg-btn {
+    display: block; width: 100%; padding: 12px; border-radius: 12px; border: none;
+    font-size: 15px; font-weight: 600; margin-bottom: 10px; cursor: pointer;
+    background: var(--accent); color: white; transition: 0.2s;
   }
-  .sdBtn.primary { background: var(--accent); color: #0a1f0e; border-color: var(--accent); }
-  .sdBtn.primary:hover { box-shadow: 0 0 14px var(--accent-glow); }
-  .sdBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .sdTag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; background: rgba(124,223,158,0.12); color: var(--accent); font-weight: 600; }
-  .sdTag.offline { background: rgba(255,100,100,0.12); color: #ff7a7a; }
-  .sdTag.lan { background: rgba(124,223,158,0.15); color: var(--accent); }
-  .sdTag.et { background: rgba(77,182,172,0.15); color: var(--accent-2); }
+  .dlg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .dlg-btn.sec { background: rgba(0,0,0,0.05); color: var(--text-main); }
+  
+  .footer { margin-top: 24px; font-size: 11px; color: var(--text-dim); text-align: center; }
 </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="badge"><span class="dot"></span> PERSONAL WEB HUB</div>
-      <h1>个人<span>在线工具箱</span></h1>
-      <p class="subtitle">轻量 · 高效 · 纯本地浏览器运行</p>
-    </header>
+  <div class="header">
+    <h1>🛠️ 工具箱</h1>
+    <p>SD 探测 + SMB 备忘（护眼磨砂版）</p>
+  </div>
 
-    <div class="tools-grid">
-      <!-- 工具 1 -->
-      <a href="./tvboxtools.html" class="tool-card">
-        <div>
-          <div class="card-icon">📺</div>
-          <div class="card-title">TVBox 线路解析</div>
-          <div class="card-desc">解析接口配置，提取依赖文件，生成批量下载与打包。</div>
-        </div>
-        <div class="card-action">
-          打开
-          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </div>
-      </a>
+  <div class="grid">
+    <!-- SD 卡片 -->
+    <div class="card" id="sdCard" tabindex="0" role="button">
+      <div class="card-title">
+        🎨 Stable Diffusion
+        <span class="sdTag" id="sdTag">检测中</span>
+      </div>
+      <div class="card-desc" id="sdDesc">点击检测 108 / 10.126.126.1</div>
+    </div>
 
-      <!-- 工具 2 -->
-      <a href="./状态互查2.0.html" class="tool-card">
-        <div>
-          <div class="card-icon">📊</div>
-          <div class="card-title">状态互查 2.0</div>
-          <div class="card-desc">方便快捷的数据对比与状态在线互查工具。</div>
-        </div>
-        <div class="card-action">
-          打开
-          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </div>
-      </a>
-
-      <!-- 工具 3：SD -->
-      <a href="#" id="sdCard" class="tool-card" tabindex="0">
-        <div>
-          <div class="card-icon">🎨</div>
-          <div class="card-title">Stable Diffusion <span class="sdTag" id="sdTag">检测中</span></div>
-          <div class="card-desc">AI 绘画本地服务。自动检测局域网与虚拟网，智能选最佳链路。</div>
-        </div>
-        <div class="card-action">
-          检测并打开
-          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </div>
-      </a>
+    <!-- SMB 备忘卡（纯展示，不探测） -->
+    <div class="card" style="cursor: default;">
+      <div class="card-title">📁 SMB 共享备忘</div>
+      <div class="card-desc">
+        主机：192.168.0.108 / 10.126.126.1<br>
+        端口：445（匿名/账号）｜路径留空<br>
+        <i>走 App 直连，不中转网页</i>
+      </div>
+    </div>
+    
+    <!-- 占位小卡，凑齐三卡一屏 -->
+    <div class="card" style="cursor: default;">
+      <div class="card-title">💡 提示</div>
+      <div class="card-desc">IP通但7860拒绝 = SD未启动<br>请去108机器开终端跑 SD</div>
     </div>
   </div>
 
-  <footer>
-    GitHub Pages · 纯前端安全运行
-  </footer>
+  <div class="footer">局域网优先 · 虚拟网兜底</div>
 
-  <!-- SD 探测弹窗 -->
+  <!-- SD 弹窗 -->
   <div class="sdDialog" id="sdDlg">
-    <div class="sdBox">
-      <div class="sdTitle" id="dlgTitle">正在检测 SD 服务</div>
-      <div class="sdSub" id="dlgSub">探测局域网与 EasyTier 虚拟网...</div>
+    <div class="dlg-box">
+      <div class="dlg-title" id="dlgTitle">检测中</div>
+      <div class="dlg-sub" id="dlgSub">请稍候...</div>
       <div class="dlg-tip" id="dlgTip"></div>
-      <div class="sdBtns">
-        <button class="sdBtn" id="btnRetry">重测</button>
-        <button class="sdBtn primary" id="btnGo" disabled>进入 SD</button>
-      </div>
+      <button class="dlg-btn" id="btnGo" disabled>进入 SD</button>
+      <button class="dlg-btn sec" id="btnRetry">重新检测</button>
     </div>
   </div>
 
 <script>
-(function() {
-  var LAN = 'http://192.168.0.108:7860';
-  var ET  = 'http://10.126.126.1:7860';
-  var state = { lan: null, et: null };
-  var ready = false;
-  
-  var card = document.getElementById('sdCard');
-  var dlg = document.getElementById('sdDlg');
-  var tag = document.getElementById('sdTag');
-  var title = document.getElementById('dlgTitle');
-  var sub = document.getElementById('dlgSub');
-  var tip = document.getElementById('dlgTip');
-  var btnGo = document.getElementById('btnGo');
-  var btnRetry = document.getElementById('btnRetry');
+(() => {
+  const LAN = 'http://192.168.0.108:7860';
+  const ET  = 'http://10.126.126.1:7860';
+  const TIMEOUT = 2500; // 超时判定为网络不通（比瞬间拒绝慢）
 
-  function probe(url) {
-    return new Promise(function(resolve) {
-      var t = setTimeout(function(){ resolve(false); }, 3500);
-      var x = new XMLHttpRequest();
-      x.open('GET', url + '/sdapi/v1/options', true);
-      x.timeout = 3500;
-      x.onload = function(){ clearTimeout(t); resolve(x.status >= 200 && x.status < 400); };
-      x.onerror = function(){ clearTimeout(t); resolve(false); };
-      x.ontimeout = function(){ clearTimeout(t); resolve(false); };
-      try { x.send(); } catch(e) { clearTimeout(t); resolve(false); }
-    });
+  const card = document.getElementById('sdCard');
+  const tag = document.getElementById('sdTag'), desc = document.getElementById('sdDesc');
+  const dlg = document.getElementById('sdDlg'), title = document.getElementById('dlgTitle'), sub = document.getElementById('dlgSub');
+  const tip = document.getElementById('dlgTip'), btnGo = document.getElementById('btnGo'), btnRetry = document.getElementById('btnRetry');
+
+  let ready = false, state = { lan: null, et: null }; 
+  // lan/et 值: true(通) / false(网络不通) / 'nosd'(IP通但端口拒)
+
+  async function probe(url) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT);
+    try {
+      // 用 HEAD 轻量探测，fetch 报错通常代表网络层/端口问题
+      await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(t); return true; // 能发请求即认为通（no-cors下只要不抛错）
+    } catch (e) {
+      clearTimeout(t);
+      // 瞬间拒绝（端口没开）通常表现为特定错误，且耗时极短
+      // 超时(abort)代表网络不通/防火墙丢包
+      if (e.name === 'AbortError') return false; 
+      
+      // 非超时错误：通常是端口拒绝（Failed to fetch / ERR_CONNECTION_REFUSED）
+      // 这里无法真 ping，但结合"瞬间失败"我们标记为 nosd（提示去启动SD）
+      return 'nosd'; 
+    }
   }
 
   function setTag() {
     tag.className = 'sdTag';
     if (!ready) { tag.textContent = '检测中'; return; }
-    if (state.lan) { tag.textContent = '局域网'; tag.className += ' lan'; }
-    else if (state.et) { tag.textContent = '虚拟网'; tag.className += ' et'; }
+    if (state.lan === true) { tag.textContent = '局域网'; tag.className += ' lan'; }
+    else if (state.et === true) { tag.textContent = '虚拟网'; tag.className += ' et'; }
+    else if (state.lan === 'nosd' || state.et === 'nosd') { tag.textContent = 'SD未启动'; tag.className += ' nosd'; }
     else { tag.textContent = '离线'; tag.className += ' offline'; }
   }
 
   function render() {
     if (!ready) {
-      title.textContent = '正在检测 SD 服务';
-      sub.textContent = '探测局域网与 EasyTier 虚拟网...';
+      title.textContent = '正在检测 SD 服务'; sub.textContent = '探测 108 & 10.126.126.1:7860...';
       tip.className = 'dlg-tip'; btnGo.disabled = true; btnGo.textContent = '检测中';
-    } else if (state.lan && state.et) {
-      title.textContent = '双链路通畅';
-      sub.textContent = '局域网延迟更低，跨网络时切到虚拟网。';
+      desc.textContent = '正在探测...';
+    } 
+    else if (state.lan === true && state.et === true) {
+      title.textContent = '双链路通畅'; sub.textContent = '局域网延迟更低，跨网络时切虚拟网。';
       tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入（局域网）';
-    } else if (state.lan) {
-      title.textContent = '已连上局域网 SD';
-      sub.textContent = '可以直接开画了';
+      desc.textContent = '双链路 OK，优先 108';
+    } 
+    else if (state.lan === true) {
+      title.textContent = '已连上局域网 SD'; sub.textContent = '可以直接开画了';
       tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入（局域网）';
-    } else if (state.et) {
-      title.textContent = '局域网不可达';
-      sub.textContent = '已自动切到 EasyTier 虚拟网';
-      tip.className = 'dlg-tip show';
-      tip.textContent = '⚠️ 192.168.0.108 不可达（不在同局域网）。走 10.126.126.1 虚拟网。';
+      desc.textContent = '局域网通畅';
+    } 
+    else if (state.et === true) {
+      title.textContent = '局域网不可达'; sub.textContent = '已自动切到 EasyTier 虚拟网';
+      tip.className = 'dlg-tip show'; tip.textContent = '⚠️ 192.168.0.108 不可达，走 10.126.126.1 虚拟网。';
       btnGo.disabled = false; btnGo.textContent = '进入（虚拟网）';
-    } else {
-      title.textContent = 'SD 暂时连不上';
-      sub.textContent = '两条链路都没响应';
+      desc.textContent = '走虚拟网';
+    } 
+    else if (state.lan === 'nosd' || state.et === 'nosd') {
+      // 核心新增场景：IP通但7860拒绝
+      title.textContent = '⚠️ IP通，但 SD 未启动'; 
+      sub.textContent = '端口 7860 拒绝访问（机器在线，服务没跑）';
       tip.className = 'dlg-tip show';
-      tip.innerHTML = '❌ 局域网：不在当前局域网<br>❌ 虚拟网：请先用 EasyTier 组网后再用！';
+      tip.innerHTML = '🟢 网络/组网正常<br>🔴 <b>7860 端口无响应</b><br>👉 请去 108 机器启动 SD WebUI！';
+      btnGo.disabled = true; btnGo.textContent = 'SD未启动';
+      desc.textContent = '网络通，SD没开';
+    }
+    else {
+      title.textContent = 'SD 暂时连不上'; sub.textContent = '两条链路都超时/不可达';
+      tip.className = 'dlg-tip show';
+      tip.innerHTML = '❌ 局域网：不可达<br>❌ 虚拟网：不可达<br>请检查 EasyTier 组网或机器开机状态。';
       btnGo.disabled = true; btnGo.textContent = '暂不可用';
+      desc.textContent = '网络不通';
     }
     setTag();
   }
 
-  function runCheck() {
-    ready = false; state.lan = null; state.et = null;
-    render();
-    Promise.all([
-      probe(LAN).then(function (r) { state.lan = r; }),
-      probe(ET).then(function (r)  { state.et  = r; })
-    ]).then(function () { ready = true; render(); });
+  async function runCheck() {
+    ready = false; state.lan = null; state.et = null; render();
+    const [r1, r2] = await Promise.all([
+      probe(LAN).then(r => state.lan = r),
+      probe(ET).then(r => state.et = r)
+    ]);
+    ready = true; render();
   }
 
   function openSD() {
-    if (state.lan) { window.open(LAN, '_blank', 'noopener'); return; }
-    if (state.et)  { window.open(ET,  '_blank', 'noopener'); return; }
+    if (state.lan === true) { window.open(LAN, '_blank', 'noopener'); return; }
+    if (state.et === true) { window.open(ET, '_blank', 'noopener'); return; }
   }
 
-  card.addEventListener('click', function (e) {
-    e.preventDefault(); dlg.className = 'sdDialog show'; runCheck();
-  });
-  card.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
-  });
-  btnGo.addEventListener('click', function () {
-    if (this.disabled) return; dlg.className = 'sdDialog'; openSD();
-  });
-  btnRetry.addEventListener('click', function () { runCheck(); });
-  dlg.addEventListener('click', function (e) {
-    if (e.target === dlg) dlg.className = 'sdDialog';
-  });
+  card.addEventListener('click', e => { e.preventDefault(); dlg.classList.add('show'); runCheck(); });
+  card.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); card.click(); } });
+  btnGo.addEventListener('click', () => { if(!btnGo.disabled){ dlg.classList.remove('show'); openSD(); } });
+  btnRetry.addEventListener('click', runCheck);
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.classList.remove('show'); });
 
-  runCheck();
+  runCheck(); // 初始静默探一次
 })();
 </script>
 </body>
