@@ -2,21 +2,21 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>个人在线工具箱 | Tools Hub</title>
 <style>
   :root {
-    --bg-deep: #07090f;
-    --bg-panel: rgba(16, 22, 48, 0.7);
-    --bg-hover: rgba(30, 40, 80, 0.9);
-    --border: rgba(100, 130, 255, 0.15);
-    --border-active: rgba(0, 212, 255, 0.6);
-    --text: #d0d8f0;
-    --text-dim: #7b8cae;
-    --accent: #00d4ff;
-    --accent-2: #8b5cf6;
-    --accent-glow: rgba(0, 212, 255, 0.25);
-    --radius: 20px;
+    --bg-deep: #1a2e1a;
+    --bg-panel: rgba(255, 255, 255, 0.08);
+    --bg-hover: rgba(255, 255, 255, 0.14);
+    --border: rgba(255, 255, 255, 0.12);
+    --border-active: rgba(120, 220, 140, 0.5);
+    --text: #e8f5e9;
+    --text-dim: #a5c4a8;
+    --accent: #7cdf9e;
+    --accent-2: #4db6ac;
+    --accent-glow: rgba(124, 223, 158, 0.2);
+    --radius: 16px;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,52 +28,73 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 60px 24px 30px;
-    line-height: 1.6;
-    /* 增加微弱的背景光晕提升质感 */
-    background-image: radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+    justify-content: center;
+    padding: 16px 14px 14px;
+    line-height: 1.5;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ===== 护眼绿渐变背景 ===== */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: 
+      radial-gradient(ellipse at 20% 10%, rgba(76, 175, 80, 0.25) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 90%, rgba(56, 142, 60, 0.2) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(27, 94, 32, 0.15) 0%, transparent 70%),
+      linear-gradient(160deg, #1b3a2a 0%, #1a2e1a 40%, #162616 100%);
+  }
+
+  /* ===== 叠加层蒙版 ===== */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: rgba(10, 30, 15, 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
   }
   
   .container {
-    max-width: 860px;
+    max-width: 780px;
     margin: 0 auto;
     width: 100%;
+    position: relative; z-index: 1;
   }
   
-  /* 头部排版优化 */
+  /* 头部紧凑 */
   header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 18px;
   }
   
   .badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
+    gap: 6px;
+    padding: 4px 12px;
     border-radius: 999px;
     border: 1px solid var(--border-active);
-    background: rgba(0, 212, 255, 0.08);
-    font-size: 13px;
+    background: rgba(124, 223, 158, 0.1);
+    font-size: 11px;
     color: var(--accent);
     font-weight: 600;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     letter-spacing: 0.5px;
   }
   
   .badge .dot {
-    width: 6px; height: 6px;
+    width: 5px; height: 5px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
+    box-shadow: 0 0 8px var(--accent);
   }
   
   h1 {
-    font-size: 36px;
+    font-size: 26px;
     font-weight: 800;
-    margin-bottom: 10px;
-    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
   }
   
   h1 span {
@@ -85,127 +106,137 @@
   
   p.subtitle {
     color: var(--text-dim);
-    font-size: 15px;
-    margin-top: 8px;
+    font-size: 12.5px;
+    margin-top: 4px;
   }
   
-  /* 网格间距优化 */
+  /* 网格：三卡一屏 */
   .tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-    margin-bottom: 50px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
   }
   
-  /* 卡片排版优化 */
+  /* ===== 磨砂玻璃卡片（缩小版）===== */
   .tool-card {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 28px;
+    padding: 18px 16px;
     text-decoration: none;
     color: inherit;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    backdrop-filter: blur(12px);
-    min-height: 180px;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    min-height: 148px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   
   .tool-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     border-color: var(--border-active);
-    box-shadow: 0 12px 35px var(--accent-glow);
+    box-shadow: 0 8px 28px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.08);
     background: var(--bg-hover);
   }
   
   .card-icon {
-    font-size: 38px;
-    margin-bottom: 18px;
+    font-size: 30px;
+    margin-bottom: 10px;
     display: block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
   
   .card-title {
-    font-size: 19px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
   }
   
   .card-desc {
-    font-size: 13.5px;
+    font-size: 12px;
     color: var(--text-dim);
-    line-height: 1.6;
-    margin-bottom: 24px;
+    line-height: 1.5;
+    margin-bottom: 14px;
     flex-grow: 1;
   }
   
   .card-action {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 5px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--accent);
     margin-top: auto;
   }
   
   .card-action svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    width: 15px; height: 15px;
+    fill: none; stroke: currentColor;
+    stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
     transition: transform 0.2s;
   }
   
   .tool-card:hover .card-action svg {
-    transform: translateX(5px);
+    transform: translateX(4px);
   }
   
-  /* 底部优化 */
+  /* 底部紧凑 */
   footer {
     text-align: center;
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-dim);
-    padding-top: 24px;
-    border-top: 1px solid rgba(100, 130, 255, 0.08);
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    position: relative; z-index: 1;
   }
   
-  /* SD 弹窗样式 (保持原有逻辑，优化视觉) */
+  /* ===== SD 弹窗 ===== */
   .sdDialog {
     position: fixed; inset: 0;
-    background: rgba(7, 9, 15, 0.85);
-    backdrop-filter: blur(8px);
+    background: rgba(10, 25, 12, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: none; align-items: center; justify-content: center;
-    z-index: 999; padding: 20px;
+    z-index: 999; padding: 16px;
   }
   .sdDialog.show { display: flex; }
   .sdBox {
-    background: var(--bg-panel);
+    background: rgba(255,255,255,0.1);
     border: 1px solid var(--border-active);
     border-radius: var(--radius);
-    padding: 32px; max-width: 420px; width: 100%;
-    text-align: center; backdrop-filter: blur(12px);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    padding: 26px 22px; max-width: 380px; width: 100%;
+    text-align: center;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
   }
-  .sdTitle { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px; }
-  .sdSub { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; }
-  .dlg-tip { font-size: 13.5px; color: var(--accent); background: rgba(0,212,255,0.08); padding: 12px; border-radius: 12px; margin-bottom: 24px; display: none; line-height: 1.5; }
+  .sdTitle { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .sdSub { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
+  .dlg-tip { font-size: 12.5px; color: var(--accent); background: rgba(124,223,158,0.1); padding: 10px 12px; border-radius: 10px; margin-bottom: 18px; display: none; line-height: 1.5; border: 1px solid rgba(124,223,158,0.15); }
   .dlg-tip.show { display: block; }
-  .sdBtns { display: flex; gap: 12px; justify-content: center; }
+  .sdBtns { display: flex; gap: 10px; justify-content: center; }
   .sdBtn {
-    padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600;
-    cursor: pointer; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text);
-    transition: all 0.2s;
+    padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: var(--text);
+    transition: all 0.2s; backdrop-filter: blur(8px);
   }
-  .sdBtn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
-  .sdBtn.primary:hover { box-shadow: 0 0 15px var(--accent-glow); }
-  .sdBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .sdTag { display: inline-block; font-size: 12px; padding: 3px 8px; border-radius: 8px; background: rgba(0,212,255,0.1); color: var(--accent); margin-left: 8px; vertical-align: middle; }
+  .sdBtn.primary { background: var(--accent); color: #0a1f0e; border-color: var(--accent); }
+  .sdBtn.primary:hover { box-shadow: 0 0 14px var(--accent-glow); }
+  .sdBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sdTag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; background: rgba(124,223,158,0.12); color: var(--accent); font-weight: 600; }
+  .sdTag.offline { background: rgba(255,100,100,0.12); color: #ff7a7a; }
+  .sdTag.lan { background: rgba(124,223,158,0.15); color: var(--accent); }
+  .sdTag.et { background: rgba(77,182,172,0.15); color: var(--accent-2); }
 </style>
 </head>
 <body>
@@ -221,11 +252,11 @@
       <a href="./tvboxtools.html" class="tool-card">
         <div>
           <div class="card-icon">📺</div>
-          <div class="card-title">TVBox 线路解析工具</div>
-          <div class="card-desc">解析接口配置，一键提取 jar/py/js/json 依赖文件，生成批量下载与打包。</div>
+          <div class="card-title">TVBox 线路解析</div>
+          <div class="card-desc">解析接口配置，提取依赖文件，生成批量下载与打包。</div>
         </div>
         <div class="card-action">
-          立即打开
+          打开
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
       </a>
@@ -234,21 +265,21 @@
       <a href="./状态互查2.0.html" class="tool-card">
         <div>
           <div class="card-icon">📊</div>
-          <div class="card-title">状态互查工具 2.0</div>
+          <div class="card-title">状态互查 2.0</div>
           <div class="card-desc">方便快捷的数据对比与状态在线互查工具。</div>
         </div>
         <div class="card-action">
-          立即打开
+          打开
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
       </a>
 
-      <!-- 工具 3：SD 入口 (带探测弹窗) -->
+      <!-- 工具 3：SD -->
       <a href="#" id="sdCard" class="tool-card" tabindex="0">
         <div>
           <div class="card-icon">🎨</div>
           <div class="card-title">Stable Diffusion <span class="sdTag" id="sdTag">检测中</span></div>
-          <div class="card-desc">AI 绘画本地服务。自动检测局域网与 EasyTier 虚拟网，智能选择最佳链路。</div>
+          <div class="card-desc">AI 绘画本地服务。自动检测局域网与虚拟网，智能选最佳链路。</div>
         </div>
         <div class="card-action">
           检测并打开
@@ -259,17 +290,17 @@
   </div>
 
   <footer>
-    GitHub Pages 个人站点 · 纯前端安全运行
+    GitHub Pages · 纯前端安全运行
   </footer>
 
   <!-- SD 探测弹窗 -->
   <div class="sdDialog" id="sdDlg">
     <div class="sdBox">
       <div class="sdTitle" id="dlgTitle">正在检测 SD 服务</div>
-      <div class="sdSub" id="dlgSub">请稍候，正在探测局域网与虚拟网...</div>
+      <div class="sdSub" id="dlgSub">探测局域网与 EasyTier 虚拟网...</div>
       <div class="dlg-tip" id="dlgTip"></div>
       <div class="sdBtns">
-        <button class="sdBtn" id="btnRetry">重新检测</button>
+        <button class="sdBtn" id="btnRetry">重测</button>
         <button class="sdBtn primary" id="btnGo" disabled>进入 SD</button>
       </div>
     </div>
@@ -300,42 +331,42 @@
       x.onload = function(){ clearTimeout(t); resolve(x.status >= 200 && x.status < 400); };
       x.onerror = function(){ clearTimeout(t); resolve(false); };
       x.ontimeout = function(){ clearTimeout(t); resolve(false); };
-      x.send();
+      try { x.send(); } catch(e) { clearTimeout(t); resolve(false); }
     });
   }
 
   function setTag() {
-    if (!ready) { tag.textContent = '检测中'; tag.style.background = 'rgba(100,130,255,0.1)'; tag.style.color = '#7b8cae'; return; }
-    if (state.lan) { tag.textContent = '局域网'; tag.style.background = 'rgba(0,212,255,0.15)'; tag.style.color = '#00d4ff'; }
-    else if (state.et) { tag.textContent = '虚拟网'; tag.style.background = 'rgba(139,92,246,0.15)'; tag.style.color = '#8b5cf6'; }
-    else { tag.textContent = '离线'; tag.style.background = 'rgba(255,80,80,0.15)'; tag.style.color = '#ff5050'; }
+    tag.className = 'sdTag';
+    if (!ready) { tag.textContent = '检测中'; return; }
+    if (state.lan) { tag.textContent = '局域网'; tag.className += ' lan'; }
+    else if (state.et) { tag.textContent = '虚拟网'; tag.className += ' et'; }
+    else { tag.textContent = '离线'; tag.className += ' offline'; }
   }
 
   function render() {
     if (!ready) {
       title.textContent = '正在检测 SD 服务';
-      sub.textContent = '请稍候，正在探测局域网与虚拟网...';
+      sub.textContent = '探测局域网与 EasyTier 虚拟网...';
       tip.className = 'dlg-tip'; btnGo.disabled = true; btnGo.textContent = '检测中';
     } else if (state.lan && state.et) {
       title.textContent = '双链路通畅';
-      sub.textContent = '局域网延迟更低，跨网络时切到 EasyTier。';
-      tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入 SD（局域网）';
+      sub.textContent = '局域网延迟更低，跨网络时切到虚拟网。';
+      tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入（局域网）';
     } else if (state.lan) {
       title.textContent = '已连上局域网 SD';
       sub.textContent = '可以直接开画了';
-      tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入 SD（局域网）';
+      tip.className = 'dlg-tip'; btnGo.disabled = false; btnGo.textContent = '进入（局域网）';
     } else if (state.et) {
       title.textContent = '局域网不可达';
       sub.textContent = '已自动切到 EasyTier 虚拟网';
       tip.className = 'dlg-tip show';
-      tip.textContent = '⚠️ 192.168.0.108 不可达：你不在当前局域网。现在走 10.126.126.1 虚拟网，画起来一样用。';
-      btnGo.disabled = false; btnGo.textContent = '进入 SD（虚拟网）';
+      tip.textContent = '⚠️ 192.168.0.108 不可达（不在同局域网）。走 10.126.126.1 虚拟网。';
+      btnGo.disabled = false; btnGo.textContent = '进入（虚拟网）';
     } else {
       title.textContent = 'SD 暂时连不上';
       sub.textContent = '两条链路都没响应';
       tip.className = 'dlg-tip show';
-      tip.innerHTML = '❌ <b>局域网</b>：你不在当前局域网，连不上 192.168.0.108。<br>' +
-                      '❌ <b>虚拟网</b>：10.126.126.1 也没响应，请先用 EasyTier 组网后再用！';
+      tip.innerHTML = '❌ 局域网：不在当前局域网<br>❌ 虚拟网：请先用 EasyTier 组网后再用！';
       btnGo.disabled = true; btnGo.textContent = '暂不可用';
     }
     setTag();
@@ -347,10 +378,7 @@
     Promise.all([
       probe(LAN).then(function (r) { state.lan = r; }),
       probe(ET).then(function (r)  { state.et  = r; })
-    ]).then(function () {
-      ready = true;
-      render();
-    });
+    ]).then(function () { ready = true; render(); });
   }
 
   function openSD() {
@@ -359,25 +387,20 @@
   }
 
   card.addEventListener('click', function (e) {
-    e.preventDefault();
-    dlg.className = 'sdDialog show';
-    runCheck();
+    e.preventDefault(); dlg.className = 'sdDialog show'; runCheck();
   });
   card.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
   });
-
   btnGo.addEventListener('click', function () {
-    if (this.disabled) return;
-    dlg.className = 'sdDialog';
-    openSD();
+    if (this.disabled) return; dlg.className = 'sdDialog'; openSD();
   });
   btnRetry.addEventListener('click', function () { runCheck(); });
   dlg.addEventListener('click', function (e) {
     if (e.target === dlg) dlg.className = 'sdDialog';
   });
 
-  runCheck(); // 页面加载静默探一次，刷新角标
+  runCheck();
 })();
 </script>
 </body>
