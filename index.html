@@ -296,15 +296,17 @@
     </header>
 
     <div class="tools-grid">
-      <!-- 工具 1 -->
-      <a href="./tvboxtools.html" class="tool-card">
+      <!-- 工具 1：改为壳助手 APK 下载 -->
+      <a href="https://liujing1992.github.io/-/壳助手最新版v1.7.2.7_ITMOP.COM.apk"
+         class="tool-card"
+         target="_blank" rel="noopener noreferrer">
         <div>
           <div class="card-icon">📺</div>
-          <div class="card-title">TVBox 线路解析</div>
-          <div class="card-desc">解析接口配置，提取依赖文件，生成批量下载与打包。</div>
+          <div class="card-title">壳助手（TVBox 替代）</div>
+          <div class="card-desc">原解析接口失效，改用壳助手最新版 APK，点击直接下载安装包。</div>
         </div>
         <div class="card-action">
-          打开
+          下载 APK
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
       </a>
@@ -333,7 +335,7 @@
           检测并打开
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
-      </a>
+      </div>
     </div>
   </div>
 
@@ -392,17 +394,15 @@
   var btnGo = document.getElementById('btnGo');
   var btnRetry = document.getElementById('btnRetry');
 
-  var state = { lan: null, et: null }; // true=通 false=不通 null=检测中
+  var state = { lan: null, et: null };
   var ready = false;
-  var seq = 0; // 探测序号，用来让旧回调失效，彻底干掉竞态/缓存残留误判
+  var seq = 0;
 
-  // ===== 核心修复：每次探测都是全新的请求，带随机串破坏缓存 + 强制 no-cache =====
   function probe(url, sid) {
     return new Promise(function(resolve) {
       var t = setTimeout(function(){ resolve(false); }, TIMEOUT);
       try {
         var x = new XMLHttpRequest();
-        // 时间戳 + 随机数 + 序号，四重保证每次 URL 唯一，浏览器/代理都无法命中旧缓存
         var nocache = '?_t=' + Date.now() + '&_r=' + Math.random().toString(36).slice(2) + '&_s=' + sid;
         x.open('GET', url + PROBE + nocache, true);
         x.timeout = TIMEOUT;
@@ -413,7 +413,6 @@
         x.onreadystatechange = function(){
           if (x.readyState !== 4) return;
           clearTimeout(t);
-          // status 0 = 网络层失败（跨域/端口拒绝/不通）；2xx/3xx 算通
           if (x.status === 0) { resolve(false); return; }
           resolve(x.status >= 200 && x.status < 400);
         };
@@ -435,7 +434,6 @@
     else                { tag.textContent = '离线';   tag.className += ' offline'; }
   }
 
-  // 弹窗里两条链路的状态行
   function renderRows() {
     var rLan = document.getElementById('rowLan');
     var rEt  = document.getElementById('rowEt');
@@ -482,7 +480,6 @@
       tip.textContent = '⚠️ 192.168.0.108 不可达（你不在当前局域网），现在走 10.126.126.1 虚拟网。';
       btnGo.disabled = false; btnGo.textContent = '进入 SD（虚拟网）';
     } else {
-      // ===== 双链路都不通：逐条列出 IP，给「尝试访问」按钮 =====
       title.textContent = 'SD 暂时连不上';
       sub.textContent = '两条链路都没响应，你可以手动点下面尝试直达：';
       tip.className = 'dlg-tip show';
@@ -500,7 +497,7 @@
   }
 
   function runCheck() {
-    seq++;                       // 让上一轮的所有回调作废
+    seq++;
     var sid = seq;
     ready = false;
     state.lan = null;
@@ -511,7 +508,7 @@
       probe(LAN, sid).then(function(r){ if (sid === seq) state.lan = r; }),
       probe(ET,  sid).then(function(r){ if (sid === seq) state.et  = r; })
     ]).then(function(){
-      if (sid !== seq) return;    // 期间又点了重测，丢弃旧结果
+      if (sid !== seq) return;
       ready = true;
       render();
     });
@@ -522,7 +519,6 @@
     if (state.et)  { window.open(ET,  '_blank', 'noopener'); return; }
   }
 
-  // 卡片点击 → 弹窗 + 检测
   card.addEventListener('click', function(e){
     e.preventDefault();
     dlg.className = 'sdDialog show';
@@ -539,7 +535,6 @@
   });
   btnRetry.addEventListener('click', function(){ runCheck(); });
 
-  // 点遮罩 / ESC 关闭
   dlg.addEventListener('click', function(e){
     if (e.target === dlg) dlg.className = 'sdDialog';
   });
@@ -547,7 +542,6 @@
     if (e.key === 'Escape' && dlg.className.indexOf('show') > -1) dlg.className = 'sdDialog';
   });
 
-  // 页面加载静默探一次，只刷新卡片角标（不弹窗）
   (function silent(){
     var sid = ++seq;
     probe(LAN, sid).then(function(r){ if (sid === seq) { state.lan = r; setTag(); } });
