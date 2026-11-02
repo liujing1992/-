@@ -37,7 +37,6 @@
     overflow-x: hidden;
   }
 
-  /* ===== 护眼绿渐变背景 ===== */
   body::before {
     content: '';
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -48,7 +47,6 @@
       linear-gradient(160deg, #1b3a2a 0%, #1a2e1a 40%, #162616 100%);
   }
 
-  /* ===== 叠加层蒙版 ===== */
   body::after {
     content: '';
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -64,7 +62,6 @@
     position: relative; z-index: 1;
   }
 
-  /* 头部紧凑 */
   header {
     text-align: center;
     margin-bottom: 18px;
@@ -114,7 +111,6 @@
     margin-top: 4px;
   }
 
-  /* 网格：三卡一屏 */
   .tools-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -122,7 +118,6 @@
     margin-bottom: 16px;
   }
 
-  /* ===== 磨砂玻璃卡片（缩小版）===== */
   .tool-card {
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -147,8 +142,6 @@
     box-shadow: 0 8px 28px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.08);
     background: var(--bg-hover);
   }
-
-  .tool-card.locked:hover { transform: none; border-color: var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05); background: var(--bg-panel); }
 
   .card-icon {
     font-size: 30px;
@@ -194,9 +187,7 @@
   }
 
   .tool-card:hover .card-action svg { transform: translateX(4px); }
-  .tool-card.locked:hover .card-action svg { transform: none; }
 
-  /* 底部紧凑 */
   footer {
     text-align: center;
     font-size: 11px;
@@ -206,7 +197,7 @@
     position: relative; z-index: 1;
   }
 
-  /* ===== SD 弹窗 ===== */
+  /* ===== SD 弹窗（保留） ===== */
   .sdDialog {
     position: fixed; inset: 0;
     background: rgba(10, 25, 12, 0.82);
@@ -228,11 +219,7 @@
   }
   .sdTitle { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 6px; }
   .sdSub { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
-
-  .probe {
-    display: flex; flex-direction: column; gap: 10px;
-    margin-bottom: 16px; text-align: left;
-  }
+  .probe { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; text-align: left; }
   .probe-row {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; border-radius: 10px;
@@ -259,7 +246,6 @@
     display: none;
   }
   .probe-row.bad .ptry { display: inline-block; }
-
   .dlg-tip {
     font-size: 12px; color: var(--warn);
     background: rgba(245,158,11,0.1); padding: 10px 12px;
@@ -267,7 +253,6 @@
     border: 1px solid rgba(245,158,11,0.25); text-align: left;
   }
   .dlg-tip.show { display: block; }
-
   .sdBtns { display: flex; gap: 10px; justify-content: center; }
   .sdBtn {
     padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
@@ -279,7 +264,6 @@
   .sdBtn.primary:hover { box-shadow: 0 0 14px var(--accent-glow); }
   .sdBtn.primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
   .sdBtn.ghost { background: transparent; border-color: rgba(255,255,255,0.1); color: var(--text-dim); }
-
   .sdTag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; background: rgba(124,223,158,0.12); color: var(--accent); font-weight: 600; transition: .2s; }
   .sdTag.offline { background: rgba(255,100,100,0.12); color: var(--err); }
   .sdTag.lan { background: rgba(124,223,158,0.15); color: var(--accent); }
@@ -296,20 +280,21 @@
     </header>
 
     <div class="tools-grid">
-      <!-- 工具 1 -->
-      <a href="./tvboxtools.html" class="tool-card">
+      <!-- 工具 1：壳助手 APK -->
+      <a href="https://liujing1992.github.io/-/壳助手最新版v1.7.2.7_ITMOP.COM.apk"
+         class="tool-card" target="_blank" rel="noopener noreferrer">
         <div>
           <div class="card-icon">📺</div>
-          <div class="card-title">TVBox 线路解析</div>
-          <div class="card-desc">解析接口配置，提取依赖文件，生成批量下载与打包。</div>
+          <div class="card-title">壳助手（TVBox 替代）</div>
+          <div class="card-desc">原解析接口失效，改用壳助手最新版 APK，点击直接下载安装包。</div>
         </div>
         <div class="card-action">
-          打开
+          下载 APK
           <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
       </a>
 
-      <!-- 工具 2 -->
+      <!-- 工具 2：状态互查 -->
       <a href="./状态互查2.0.html" class="tool-card">
         <div>
           <div class="card-icon">📊</div>
@@ -322,7 +307,20 @@
         </div>
       </a>
 
-      <!-- 工具 3：SD -->
+      <!-- 工具 3：RustDesk 远程桌面（新增） -->
+      <a href="https://liujing.dns.army:8080/rust.html" class="tool-card" target="_blank" rel="noopener noreferrer">
+        <div>
+          <div class="card-icon">🖥️</div>
+          <div class="card-title">RustDesk 远程桌面</div>
+          <div class="card-desc">自建 ID 服务器，P2P 直连。域名已通，一键复制配置信息。</div>
+        </div>
+        <div class="card-action">
+          打开配置页
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
+
+      <!-- 工具 4：SD -->
       <div class="tool-card" id="sdCard" tabindex="0" role="button">
         <div>
           <div class="card-icon">🎨</div>
@@ -341,12 +339,11 @@
     GitHub Pages · 纯前端安全运行
   </footer>
 
-  <!-- SD 探测弹窗 -->
+  <!-- SD 弹窗（保留原逻辑不变） -->
   <div class="sdDialog" id="sdDlg" role="dialog" aria-modal="true">
     <div class="sdBox">
       <div class="sdTitle" id="dlgTitle">正在检测 SD 服务</div>
       <div class="sdSub" id="dlgSub">分别探测局域网与 EasyTier 虚拟网…</div>
-
       <div class="probe">
         <div class="probe-row checking" id="rowLan">
           <span class="pdot"></span>
@@ -365,9 +362,7 @@
           <a class="ptry" href="http://10.126.126.1:7860" target="_blank" rel="noopener">尝试访问</a>
         </div>
       </div>
-
       <div class="dlg-tip" id="dlgTip"></div>
-
       <div class="sdBtns">
         <button class="sdBtn ghost" id="btnRetry">重新检测</button>
         <button class="sdBtn primary" id="btnGo" disabled>进入 SD</button>
@@ -376,11 +371,12 @@
   </div>
 
 <script>
+/* ===== SD 探测逻辑（原封不动） ===== */
 (function() {
   var LAN = 'http://192.168.0.108:7860';
   var ET  = 'http://10.126.126.1:7860';
   var PROBE = '/sdapi/v1/options';
-  var TIMEOUT = 5000;   // ← 唯一改动：3.5s → 5s，给慢启动的 SD 留足响应时间
+  var TIMEOUT = 3500;
 
   var card = document.getElementById('sdCard');
   var dlg  = document.getElementById('sdDlg');
@@ -392,11 +388,10 @@
   var btnGo = document.getElementById('btnGo');
   var btnRetry = document.getElementById('btnRetry');
 
-  var state = { lan: null, et: null }; // true=通 false=不通 null=检测中
+  var state = { lan: null, et: null };
   var ready = false;
-  var seq = 0; // 探测序号，用来让旧回调失效，彻底干掉竞态/缓存残留误判
+  var seq = 0;
 
-  // ===== 每次探测都是全新的请求：随机串破坏缓存 + 强制 no-cache =====
   function probe(url, sid) {
     return new Promise(function(resolve) {
       var t = setTimeout(function(){ resolve(false); }, TIMEOUT);
@@ -412,17 +407,13 @@
         x.onreadystatechange = function(){
           if (x.readyState !== 4) return;
           clearTimeout(t);
-          // status 0 = 网络层失败（跨域/端口拒绝/不通）；2xx/3xx 算通
           if (x.status === 0) { resolve(false); return; }
           resolve(x.status >= 200 && x.status < 400);
         };
         x.onerror = function(){ clearTimeout(t); resolve(false); };
         x.ontimeout = function(){ clearTimeout(t); resolve(false); };
         x.send();
-      } catch(e) {
-        clearTimeout(t);
-        resolve(false);
-      }
+      } catch(e) { clearTimeout(t); resolve(false); }
     });
   }
 
@@ -439,7 +430,6 @@
     var rEt  = document.getElementById('rowEt');
     var mLan = document.getElementById('msgLan');
     var mEt  = document.getElementById('msgEt');
-
     if (!ready) {
       rLan.className = 'probe-row checking'; mLan.textContent = '探测中…';
       rEt.className  = 'probe-row checking'; mEt.textContent  = '探测中…';
@@ -453,16 +443,13 @@
 
   function render() {
     renderRows();
-
     if (!ready) {
       title.textContent = '正在检测 SD 服务';
       sub.textContent = '分别探测局域网与 EasyTier 虚拟网…';
       tip.className = 'dlg-tip';
       btnGo.disabled = true; btnGo.textContent = '检测中…';
-      setTag();
-      return;
+      setTag(); return;
     }
-
     if (state.lan && state.et) {
       title.textContent = '双链路通畅 🎉';
       sub.textContent = '局域网延迟更低，跨网络时切到虚拟网。';
@@ -497,21 +484,13 @@
   }
 
   function runCheck() {
-    seq++;
-    var sid = seq;
-    ready = false;
-    state.lan = null;
-    state.et  = null;
+    seq++; var sid = seq;
+    ready = false; state.lan = null; state.et = null;
     render();
-
     Promise.all([
       probe(LAN, sid).then(function(r){ if (sid === seq) state.lan = r; }),
       probe(ET,  sid).then(function(r){ if (sid === seq) state.et  = r; })
-    ]).then(function(){
-      if (sid !== seq) return;
-      ready = true;
-      render();
-    });
+    ]).then(function(){ if (sid === seq) { ready = true; render(); } });
   }
 
   function openSD() {
@@ -519,30 +498,13 @@
     if (state.et)  { window.open(ET,  '_blank', 'noopener'); return; }
   }
 
-  card.addEventListener('click', function(e){
-    e.preventDefault();
-    dlg.className = 'sdDialog show';
-    runCheck();
-  });
-  card.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
-  });
-
-  btnGo.addEventListener('click', function(){
-    if (this.disabled) return;
-    dlg.className = 'sdDialog';
-    openSD();
-  });
+  card.addEventListener('click', function(e){ e.preventDefault(); dlg.className = 'sdDialog show'; runCheck(); });
+  card.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
+  btnGo.addEventListener('click', function(){ if (this.disabled) return; dlg.className = 'sdDialog'; openSD(); });
   btnRetry.addEventListener('click', function(){ runCheck(); });
+  dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.className = 'sdDialog'; });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && dlg.className.indexOf('show') > -1) dlg.className = 'sdDialog'; });
 
-  dlg.addEventListener('click', function(e){
-    if (e.target === dlg) dlg.className = 'sdDialog';
-  });
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && dlg.className.indexOf('show') > -1) dlg.className = 'sdDialog';
-  });
-
-  // 页面加载静默探一次，只刷新卡片角标（不弹窗）
   (function silent(){
     var sid = ++seq;
     probe(LAN, sid).then(function(r){ if (sid === seq) { state.lan = r; setTag(); } });
