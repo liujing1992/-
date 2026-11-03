@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>摄像头实景</title>
+<style>
+  body {
+    margin: 0; padding: 10px; background: #111; color: #fff;
+    font-family: sans-serif; text-align: center;
+  }
+  video {
+    width: 100%; max-width: 600px; border-radius: 8px;
+    background: #000; transform: scaleX(1);
+  }
+  .flipped { transform: scaleX(-1); }
+  .btns {
+    margin: 12px 0; display: flex; flex-wrap: wrap;
+    gap: 8px; justify-content: center;
+  }
+  button {
+    padding: 10px 16px; border: none; border-radius: 6px;
+    background: #2a75d3; color: #fff; font-size: 14px; cursor: pointer;
+  }
+  button:active { background: #1e5ba8; }
+  button.off { background: #555; }
+  button.danger { background: #c33; }
+  #status { margin-top: 8px; font-size: 13px; color: #aaa; }
+</style>
+</head>
+<body>
+
+<h2>📷 摄像头实景</h2>
+<video id="video" autoplay playsinline></video>
+
+<div class="btns">
+  <button id="startBtn">📷 打开摄像头</button>
+  <button id="switchBtn" disabled>🔄 切换摄像头</button>
+  <button id="torchBtn" disabled>🔦 补光灯</button>
+</div>
+
+<div id="status">未启动</div>
+
+<script>
+const video = document.getElementById('video');
+const startBtn = document.getElementById('startBtn');
+const switchBtn = document.getElementById('switchBtn');
+const torchBtn = document.getElementById('torchBtn');
+const status = document.getElementById('status');
+
+let currentStream = null;
+let facingMode = 'environment'; // 默认后置
+let torchOn = false;
+let videoTrack = null;
+
+// 检测是否支持 torch
+function hasTorch(track) {
+  return track && track.getCapabilities && track.getCapabilities().torch !== undefined;
+}
+
+// 启动摄像头
+async function startCamera() {
+  try {
+    if (currentStream) {
+      currentStream.getTracks().forEach(t => t.stop());
+    }
+
+    const constraints = {
+      video: {
+        facingMode: { ideal: facingMode },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    };
+
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = currentStream;
+
+    videoTrack = currentStream.getVideoTracks()[0];
+    const settings = videoTrack.getSettings();
+
+    // 前置镜头镜像
+    if (settings.facingMode === 'user') {
+      video.classList.add('flipped');
+    } else {
+      video.classList.remove('flipped');
+    }
+
+    // torch 按钮
+    if (hasTorch(videoTrack)) {
+      torchBtn.disabled = false;
+      torchBtn.classList.remove('off');
+      torchBtn.textContent = '🔦 补光灯';
+      torchOn = false;
+    } else {
+      torchBtn.disabled = true;
+      torchBtn.classList.add('off');
+      torchBtn.textContent = '🔦 不支持';
+    }
+
+    switchBtn.disabled = false;
+    startBtn.textContent = '⏹ 关闭摄像头';
+
+    const label = videoTrack.label || 'camera';
+    status.textContent = `已连接: ${label} (${settings.width || '?'}x${settings.height || '?'})`;
+
+  } catch (err) {
+    status.textContent = `错误: ${err.message}`;
+    console.error(err);
+  }
+}
+
+// 关闭摄像头
+function stopCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+    currentStream = null;
+  }
+  video.srcObject = null;
+  switchBtn.disabled = true;
+  torchBtn.disabled = true;
+  torchBtn.classList.add('off');
+  torchBtn.textContent = '🔦 补光灯';
+  torchOn = false;
+  startBtn.textContent = '📷 打开摄像头';
+  status.textContent = '已关闭';
+}
+
+// 切换摄像头
+function switchCamera() {
+  facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+  // 切镜头时关掉手电（前置没闪光灯）
+  torchOn = false;
+  startCamera();
+}
+
+// 补光灯
+async function toggleTorch() {
+  if (!videoTrack || !hasTorch(videoTrack)) return;
+
+  try {
+    torchOn = !torchOn;
+    await videoTrack.applyConstraints({
+      advanced: [{ torch: torchOn }]
+    });
+    torchBtn.textContent = torchOn ? '🔦 关补光' : '🔦 补光灯';
+    torchBtn.classList.toggle('off', !torchOn);
+    status.textContent = torchOn ? '补光灯已开启' : '补光灯已关闭';
+  } catch (err) {
+    status.textContent = `补光灯失败: ${err.message}`;
+    torchOn = false;
+  }
+}
+
+startBtn.onclick = () => {
+  if (currentStream) stopCamera();
+  else startCamera();
+};
+switchBtn.onclick = switchCamera;
+torchBtn.onclick = toggleTorch;
+</script>
+
+</body>
+</html>
