@@ -1,163 +1,132 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Camera</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>粉色贺卡爱心</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+  * { box-sizing: border-box; }
 
-html, body {
-  width: 100%; height: 100%; overflow: hidden;
-  background: #000; font-family: -apple-system, sans-serif;
-}
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
 
-/* 视频全屏铺满，覆盖网址栏 */
-video {
-  width: 100%; height: 100%; object-fit: cover;
-  position: fixed; top: 0; left: 0;
-}
-video.flipped { transform: scaleX(-1); }
+  body {
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 50% 38%, #fff2f8 0%, #ffd6e7 36%, #ffb3d1 72%, #ff9ec7 100%);
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
 
-/* 底部按钮栏 */
-.controls {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  display: flex; justify-content: center; align-items: center;
-  gap: 12px; padding: 16px 20px 24px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.6));
-  transition: opacity 0.8s ease;
-  z-index: 10;
-}
-.controls.hidden { opacity: 0; pointer-events: none; }
+  .scene {
+    position: relative;
+    width: min(92vw, 540px);
+    aspect-ratio: 1 / 1;
+    display: grid;
+    place-items: center;
+  }
 
-button {
-  width: 52px; height: 52px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.8);
-  background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
-  color: #fff; font-size: 20px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
-}
-button:active { transform: scale(0.92); background: rgba(255,255,255,0.2); }
-button:disabled { opacity: 0.3; }
-button.active { background: rgba(255,200,0,0.5); border-color: #ffc800; }
+  .heart-wrap {
+    position: absolute;
+    inset: 0;
+  }
 
-/* 状态提示 */
-#status {
-  position: fixed; top: env(safe-area-inset-top, 12px); left: 50%;
-  transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.6);
-  background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px;
-  z-index: 10; pointer-events: none;
-}
+  .card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: clamp(18px, 4.2vw, 28px);
+    height: clamp(26px, 6vw, 40px);
+    border-radius: 6px;
+    background: linear-gradient(145deg, #fff4fa, #ffc4dc 70%, #ffabd0);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow:
+      0 4px 12px rgba(214, 51, 108, 0.18),
+      inset 0 0 8px rgba(255, 255, 255, 0.8);
+    display: grid;
+    place-items: center;
+    color: #c2255c;
+    font-size: clamp(9px, 1.8vw, 12px);
+    font-weight: 700;
+    user-select: none;
+    animation: glow 3.6s ease-in-out infinite;
+    will-change: transform;
+  }
 
-/* 全屏时隐藏浏览器UI的辅助 */
-:fullscreen video { width: 100vw; height: 100vh; }
+  @keyframes glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.12); }
+  }
+
+  .central {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    color: #b4235a;
+    text-shadow: 0 2px 12px rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    transform: translateY(-8px);
+  }
+
+  .central h1 {
+    margin: 0;
+    font-size: clamp(22px, 5.4vw, 40px);
+    letter-spacing: 0.08em;
+  }
+
+  .central p {
+    margin: 10px 0 0;
+    font-size: clamp(12px, 2.8vw, 16px);
+    color: #c2255c;
+    opacity: 0.92;
+  }
 </style>
 </head>
 <body>
+  <div class="scene">
+    <div class="heart-wrap" id="heart"></div>
+    <div class="central">
+      <h1>生日快乐</h1>
+      <p>愿所有美好都奔向你 ❤</p>
+    </div>
+  </div>
 
-<video id="video" autoplay playsinline></video>
+  <script>
+    const heart = document.getElementById("heart");
+    const words = ["❤", "生", "日", "快", "乐", "❤", "平", "安", "好", "运"];
+    const N = 42;
+    const scale = 10.2;
 
-<div id="status">点击 ▶ 启动</div>
-
-<div class="controls" id="controls">
-  <button id="switchBtn" disabled title="切换镜头">🔄</button>
-  <button id="startBtn" title="开关">▶</button>
-  <button id="torchBtn" disabled title="补光灯">🔦</button>
-</div>
-
-<script>
-const video = document.getElementById('video');
-const startBtn = document.getElementById('startBtn');
-const switchBtn = document.getElementById('switchBtn');
-const torchBtn = document.getElementById('torchBtn');
-const status = document.getElementById('status');
-const controls = document.getElementById('controls');
-
-let currentStream = null;
-let facingMode = 'environment';
-let torchOn = false;
-let videoTrack = null;
-let hideTimer = null;
-
-// ── 按钮自动隐藏逻辑 ──
-function resetHideTimer() {
-  controls.classList.remove('hidden');
-  clearTimeout(hideTimer);
-  hideTimer = setTimeout(() => {
-    controls.classList.add('hidden');
-  }, 2500);
-}
-
-// 触摸/点击任意处重置计时
-document.addEventListener('touchstart', resetHideTimer);
-document.addEventListener('click', resetHideTimer);
-
-// ── 摄像头 ──
-async function startCamera() {
-  try {
-    if (currentStream) {
-      currentStream.getTracks().forEach(t => t.stop());
+    function heartPoint(t) {
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = -(13 * Math.cos(t)
+        - 5 * Math.cos(2 * t)
+        - 2 * Math.cos(3 * t)
+        - Math.cos(4 * t));
+      return { x, y };
     }
-    const constraints = {
-      video: {
-        facingMode: { ideal: facingMode },
-        width: { ideal: 1920 }, height: { ideal: 1080 }
-      }, audio: false
-    };
-    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = currentStream;
-    videoTrack = currentStream.getVideoTracks()[0];
-    const settings = videoTrack.getSettings();
 
-    video.classList.toggle('flipped', settings.facingMode === 'user');
-    switchBtn.disabled = false;
-    startBtn.textContent = '⏹';
+    for (let i = 0; i < N; i++) {
+      const t = (i / N) * Math.PI * 2;
+      const p = heartPoint(t);
 
-    // torch
-    if (videoTrack.getCapabilities && videoTrack.getCapabilities().torch !== undefined) {
-      torchBtn.disabled = false; torchBtn.classList.remove('active');
-    } else {
-      torchBtn.disabled = true; torchBtn.classList.remove('active');
+      const card = document.createElement("div");
+      card.className = "card";
+      card.textContent = words[i % words.length];
+
+      const angle = Math.atan2(p.y, p.x) * 180 / Math.PI - 90;
+      const x = p.x * scale;
+      const y = p.y * scale;
+
+      card.style.transform =
+        `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg)`;
+      card.style.animationDelay = `${-i * 0.09}s`;
+
+      heart.appendChild(card);
     }
-    torchOn = false;
-    status.textContent = settings.facingMode === 'user' ? '前置' : '后置';
-    resetHideTimer();
-  } catch (err) {
-    status.textContent = '无法访问摄像头';
-  }
-}
-
-function stopCamera() {
-  if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
-  video.srcObject = null;
-  startBtn.textContent = '▶'; switchBtn.disabled = true; torchBtn.disabled = true;
-  torchBtn.classList.remove('active'); status.textContent = '已关闭';
-}
-
-startBtn.onclick = (e) => { e.stopPropagation(); currentStream ? stopCamera() : startCamera(); };
-
-switchBtn.onclick = (e) => {
-  e.stopPropagation();
-  facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  torchOn = false; startCamera();
-};
-
-torchBtn.onclick = async (e) => {
-  e.stopPropagation();
-  if (!videoTrack || !videoTrack.getCapabilities) return;
-  try {
-    torchOn = !torchOn;
-    await videoTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
-    torchBtn.classList.toggle('active', torchOn);
-    status.textContent = torchOn ? '补光开' : '补光关';
-    resetHideTimer();
-  } catch (_) { torchOn = false; }
-};
-
-// 初始启动
-startCamera();
-</script>
+  </script>
 </body>
 </html>
